@@ -1,0 +1,46 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build output
+dist/
+build/
+*.tsbuildinfo
+.turbo/
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Test and coverage
+coverage/
+.nyc_output/
+test-results/
+playwright-report/
+.blob-report/
+
+# Editor and OS
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Local data and backups
+*.sqlite
+*.sqlite3
+backups/
+tmp/
+.cache/
+
+# Local dev overrides
+docker-compose.override.yml
