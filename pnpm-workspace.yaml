@@ -1,0 +1,11 @@
+packages:
+  - "apps/*"
+  - "packages/*"
+
+# pnpm 11 blocks dependency install scripts by default; these are the only
+# packages allowed to run them.
+allowBuilds:
+  "@biomejs/biome": true
+  "@nestjs/core": true
+  esbuild: true
+  lefthook: true

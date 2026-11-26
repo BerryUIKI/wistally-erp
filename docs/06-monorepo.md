@@ -233,29 +233,24 @@ pnpm depcruise --config .dependency-cruiser.cjs packages apps
 
 ## 6. TypeScript configuration
 
-The root `tsconfig.json` only references projects; it compiles nothing:
+The root `tsconfig.json` exists only so editors have an entry point; it compiles nothing:
 
 ```json
-{
-  "files": [],
-  "references": [
-    { "path": "packages/kernel" },
-    { "path": "packages/domain" },
-    { "path": "packages/application" },
-    { "path": "packages/contracts" },
-    { "path": "packages/db" },
-    { "path": "apps/api" },
-    { "path": "apps/worker" }
-  ]
-}
+{ "files": [], "compilerOptions": { "skipLibCheck": true }, "include": [] }
 ```
+
+Each package compiles itself with `tsc -p tsconfig.json` and declares its own `outDir` and `rootDir`.
+Build order is Turbo's responsibility (`"dependsOn": ["^build"]`), not TypeScript project references'.
+Project references would require `composite: true` everywhere and forbid `--noEmit`, which makes
+`typecheck` and `build` diverge. Revisit only if clean-checkout build times become a problem.
 
 `packages/config/tsconfig.base.json` fixes the settings:
 
 ```json
 {
   "compilerOptions": {
-    "target": "ES2023",
+    "target": "ES2022",
+    "lib": ["ES2023"],
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
     "strict": true,
@@ -266,11 +261,14 @@ The root `tsconfig.json` only references projects; it compiles nothing:
     "verbatimModuleSyntax": true,
     "isolatedModules": true,
     "declaration": true,
-    "composite": true,
     "skipLibCheck": true
   }
 }
 ```
+
+`target` is ES2022 because esbuild — used by Vite and Vitest — does not recognise `es2023` as a
+target string. `lib` stays ES2023, so the newer standard library is typed even though emitted syntax
+stops at ES2022.
 
 **Every strict flag is on.** In a financial system, one `undefined` is one wrong entry. There is no justification
 for disabling any of them.
