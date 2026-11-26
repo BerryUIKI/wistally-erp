@@ -101,3 +101,12 @@ Start at [docs/README.md](docs/README.md). The two documents worth reading first
   version (expand → contract).
 - Every write emits an audit row inside the same database transaction.
 - One PR = one squashed commit on `main` = one unit of rollback.
+
+## License
+
+Licensed under the [Apache License, Version 2.0](LICENSE). You may use, modify, and distribute this
+software, including commercially, provided you keep the copyright and license notices and state
+significant changes.
+
+Distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the [LICENSE](LICENSE) file for the specific language governing permissions and limitations.
