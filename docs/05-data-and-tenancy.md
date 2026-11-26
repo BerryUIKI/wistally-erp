@@ -7,7 +7,7 @@
 | Table | `snake_case`, plural | `sales_orders`, `ledger_entries` |
 | Column | `snake_case`, singular | `doc_no`, `unit_price` |
 | Foreign key | `{entity}_id` | `company_id`, `warehouse_id` |
-| Timestamp | `{action}_at`, `timestamptz` | `created_at`, `posted_at` |
+| Timestamp | `{action}_at`, `datetime(3)` storing UTC | `created_at`, `posted_at` |
 | Business date | `{meaning}_date`, `date` | `doc_date`, `due_date` |
 | Boolean | `is_` / `has_` prefix | `is_leaf`, `has_tax` |
 | Amount | `_amount` suffix | `total_amount`, `tax_amount` |
@@ -16,12 +16,12 @@
 | Unique constraint | `uq_{table}_{columns}` | `uq_items_company_sku` |
 | Check constraint | `ck_{table}_{meaning}` | `ck_journal_entries_balanced` |
 
-No camelCase, no quoted identifiers, no reserved words. PostgreSQL folds unquoted identifiers to lowercase;
-mixing cases will bite eventually.
+No camelCase, no quoted identifiers, no reserved words. MySQL is case-sensitive for table names on Linux but
+not on Windows, so every identifier is lowercase to keep behaviour identical across platforms.
 
 ## 2. Primary keys
 
-**Every table uses UUIDv7** (`uuid` type, generated in the application).
+**Every table uses UUIDv7** (stored as `char(36)`, generated in the application).
 
 ```ts
 import { uuidv7 } from 'uuidv7';
@@ -87,7 +87,7 @@ That is the payoff for insisting on a non-null `company_id` today.
 
 The MVP **does not enable RLS**; enforcement is at the application layer. Reasons:
 
-- pg-boss and the worker connections need exemptions, which complicates configuration
+- background job connections need exemptions, which complicates configuration
 - Debugging ordering and error messages gets harder
 - The base repository already injects the scope uniformly
 
@@ -100,11 +100,11 @@ The most bug-prone area in a financial system. These rules are not negotiable.
 
 | Type | DB type | Domain type | Notes |
 |---|---|---|---|
-| Amount | `NUMERIC(19,6)` | `Money` (BigInt, fixed 6 decimals) | See below |
-| Quantity | `NUMERIC(19,6)` | `Quantity` (BigInt, fixed 6 decimals) | Supports weight-based items |
-| Exchange rate | `NUMERIC(19,8)` | `ExchangeRate` (BigInt, fixed 8 decimals) | |
-| Unit price | `NUMERIC(19,6)` | `Money` | |
-| Tax rate | `NUMERIC(9,6)` | `TaxRate` (BigInt, fixed 6 decimals) | 0.13 stored as 130000 |
+| Amount | `DECIMAL(19,6)` | `Money` (BigInt, fixed 6 decimals) | See below |
+| Quantity | `DECIMAL(19,6)` | `Quantity` (BigInt, fixed 6 decimals) | Supports weight-based items |
+| Exchange rate | `DECIMAL(19,8)` | `ExchangeRate` (BigInt, fixed 8 decimals) | |
+| Unit price | `DECIMAL(19,6)` | `Money` | |
+| Tax rate | `DECIMAL(9,6)` | `TaxRate` (BigInt, fixed 6 decimals) | 0.13 stored as 130000 |
 
 ### 4.1 The `Money` implementation
 
@@ -144,7 +144,7 @@ Minor units depend on the currency: CNY has 2, JPY has 0, KWD has 3. Storing in 
 every cross-currency calculation, and exchange rates need 8 decimals — which no currency's minor unit can
 express.
 
-**A fixed 6 decimals** simultaneously: maps 1:1 to `NUMERIC(19,6)`, covers every ISO 4217 currency (the maximum
+**A fixed 6 decimals** simultaneously: maps 1:1 to `DECIMAL(19,6)`, covers every ISO 4217 currency (the maximum
 is 4 decimals, for CLF and UYW), and leaves rates free to use 8 decimals. The currency's
 `decimal_places` is applied only at display time.
 
@@ -163,7 +163,7 @@ A CI check scans migration files for these types.
 
 | Use case | Type | Rule |
 |---|---|---|
-| Moment of an event | `timestamptz` | Stored in UTC; PostgreSQL converts |
+| Moment of an event | `datetime(3)` | Stored in UTC; the driver is pinned to `timezone: 'Z'` |
 | Business date (document date, due date) | `date` | No time zone; company-local calendar day |
 | Fiscal periods | `date` (start and end) | Same |
 | Display | — | Converted to `companies.timezone` |
@@ -179,24 +179,26 @@ The application obtains time through a `Clock` port so tests can inject a fixed 
 Every business table carries:
 
 ```sql
-id            uuid PRIMARY KEY,
-company_id    uuid NOT NULL REFERENCES companies(id),
-created_at    timestamptz NOT NULL DEFAULT now(),
-created_by    uuid NOT NULL REFERENCES users(id),
-updated_at    timestamptz NOT NULL DEFAULT now(),
-updated_by    uuid NOT NULL REFERENCES users(id),
-version       integer NOT NULL DEFAULT 1
+id            char(36) PRIMARY KEY,
+company_id    char(36) NOT NULL REFERENCES companies(id),
+created_at    datetime(3) NOT NULL,
+created_by    char(36) NOT NULL REFERENCES users(id),
+updated_at    datetime(3) NOT NULL,
+updated_by    char(36) NOT NULL REFERENCES users(id),
+version       int NOT NULL DEFAULT 1
 ```
 
 - `version` backs optimistic locking and increments on every update
 - `updated_at` is maintained by the application layer (not a trigger) — one convention for the whole schema,
   and easier to test
+- **Timestamps have no database default.** The application's `Clock` supplies them, which keeps tests
+  deterministic and avoids depending on the server's clock or time zone
 
 ## 7. Soft deletes
 
 | Table type | Policy |
 |---|---|
-| Master data (items, parties, accounts) | Soft delete via `deleted_at timestamptz`; filtered by default; uniqueness via partial indexes |
+| Master data (items, parties, accounts) | Soft delete via `deleted_at datetime(3)`; filtered by default; uniqueness via a generated column included in the unique index (MySQL has no partial indexes) |
 | Business documents | Never deleted. Voiding is a state, not a deletion |
 | Stock transactions, journal entries | Never deleted. Corrections are new reversing rows |
 | Users, roles | Soft delete (`is_active = false`) because audit logs reference them |
@@ -212,7 +214,7 @@ CREATE UNIQUE INDEX uq_items_company_sku
 
 | Case | Approach | Reason |
 |---|---|---|
-| State machines (draft/posted/...) | `text` + `CHECK` | Native PostgreSQL enums require `ALTER TYPE` to change, which locks the table and complicates migrations |
+| State machines (draft/posted/...) | `varchar` + `CHECK` | Native MySQL `ENUM` needs an `ALTER TABLE` to change and maps awkwardly in Drizzle |
 | Small fixed sets (currencies, unit types) | `text` + `CHECK` | Same |
 | User-configurable sets (accounts, tax codes, warehouses) | Lookup table + foreign key | Users add and rename these |
 
@@ -258,7 +260,7 @@ Any breaking change (rename, type change, new non-null column, table split) span
 
 ```
 Release 1 (expand)
-  ALTER TABLE sales_invoices ADD COLUMN payment_terms_id uuid NULL;
+  ALTER TABLE sales_invoices ADD COLUMN payment_terms_id char(36) NULL;
   -- backfill historical rows
   UPDATE sales_invoices SET payment_terms_id = (SELECT default FROM ...) WHERE ... IS NULL;
   -- code: new writes populate the new column; reads tolerate it being null
@@ -287,15 +289,16 @@ if (await migrateLock.tryAcquire()) {
 }
 ```
 
-- `pg_advisory_lock` ensures only one instance runs migrations
-- Each migration runs in its own transaction (except `CREATE INDEX CONCURRENTLY`, marked `-- no-transaction`)
+- `GET_LOCK` on a dedicated connection ensures only one instance runs migrations
+- **MySQL DDL auto-commits.** A migration that fails midway leaves a partial schema, so keep each migration
+  small and its statements re-runnable, and never mix DDL with a non-idempotent data step in one file.
 - A failed migration fails startup → container restarts → alert. **Never start serving with pending migrations.**
 
 ### 10.4 CI checks on migrations
 
 | Check | Tool |
 |---|---|
-| Migrations are executable | Replay all migrations from scratch on a temporary PostgreSQL |
+| Migrations are executable | Replay all migrations from scratch on a temporary MySQL |
 | Resulting schema matches expectations | `drizzle-kit check` |
 | No `float` / `double` columns | Custom script |
 | No breaking changes | Diff against a schema snapshot from `main`; flag `DROP COLUMN` / `ALTER TYPE` |
@@ -390,14 +393,14 @@ Purge jobs run through `platform.jobs` with a batch cap (`BATCH_SIZE = 5000`) to
 Run through this for every new table. A CI script automates whatever can be automated.
 
 - [ ] Table name is plural and `snake_case`
-- [ ] Primary key `id uuid`, generated as UUIDv7 in the application
+- [ ] Primary key `id char(36)`, generated as UUIDv7 in the application
 - [ ] Has `company_id NOT NULL` with a foreign key
 - [ ] Has `created_at / created_by / updated_at / updated_by / version`
-- [ ] Amounts are `NUMERIC(19,6)`, quantities `NUMERIC(19,6)`, rates `NUMERIC(19,8)`
+- [ ] Amounts are `DECIMAL(19,6)`, quantities `DECIMAL(19,6)`, rates `DECIMAL(19,8)`
 - [ ] No `float` / `double precision` / `real`
 - [ ] No nullable boolean columns (always a `DEFAULT`)
 - [ ] Status columns are `text` + `CHECK`
-- [ ] Business dates are `date`; event timestamps are `timestamptz`
+- [ ] Business dates are `date`; event timestamps are `datetime(3)` storing UTC
 - [ ] Foreign key columns are indexed
 - [ ] Unique constraints use `uq_`, check constraints use `ck_`
 - [ ] Soft-delete tables use partial unique indexes (`WHERE deleted_at IS NULL`)

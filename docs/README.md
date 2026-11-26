@@ -36,11 +36,12 @@ ADR. A decision that is later overturned gets a new ADR marked `Supersedes`.
 |---|---|
 | [0001](adr/0001-modular-monolith.md) | Modular monolith, not microservices |
 | [0002](adr/0002-typescript-fullstack.md) | TypeScript across the stack |
-| [0003](adr/0003-postgres-drizzle-pgboss.md) | PostgreSQL + Drizzle + pg-boss; no Redis, no message broker |
+| [0003](adr/0003-postgres-drizzle-pgboss.md) | PostgreSQL + Drizzle + pg-boss; no Redis, no message broker — **superseded by 0008** |
 | [0004](adr/0004-ledger-as-source-of-truth.md) | The ledger is the source of truth |
 | [0005](adr/0005-private-deployment-first.md) | On-premises first; isolate by `company_id`, no `tenant_id` yet |
 | [0006](adr/0006-immutable-documents.md) | Posted documents are immutable; corrections are reversals |
 | [0007](adr/0007-money-representation.md) | Money is a `Money` value object backed by `BigInt` at 6 decimal places |
+| [0008](adr/0008-mysql-primary-postgres-shelved.md) | MySQL 8 is the primary database; PostgreSQL is shelved (supersedes 0003) |
 
 ## Documentation rules
 

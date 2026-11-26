@@ -49,7 +49,7 @@ rediscovering the accounting model after the whole system depends on it.
 | Authentication: users, sessions, argon2, login page, CSRF | 2 |
 | Authorization: roles, permission points, the three-layer skeleton (function permissions working first) | 2 |
 | Organization: company, warehouses, departments, currencies, fiscal periods | 1 |
-| Platform: audit log, document numbering, attachment upload, pg-boss wired up | 1 |
+| Platform: audit log, document numbering, attachment upload, background job queue wired up | 1 |
 
 **Acceptance criteria**
 

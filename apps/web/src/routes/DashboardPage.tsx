@@ -37,7 +37,7 @@ export function DashboardPage() {
           <li>• Three-layer permission model, function level enforced end to end</li>
           <li>• Company, warehouse and fiscal period tables with tenant scoping</li>
           <li>• Append-only audit log written inside the same transaction as the change</li>
-          <li>• Gapless document numbering service and pg-boss background worker</li>
+          <li>• Gapless document numbering service and an in-database job queue</li>
         </ul>
       </section>
     </div>

@@ -11,9 +11,9 @@ import { AllExceptionsFilter } from '../src/common/filters/all-exceptions.filter
 /**
  * Boots the real module graph without a database.
  *
- * A `pg.Pool` does not connect until the first query, so this validates
+ * A `mysql2` pool does not connect until the first query, so this validates
  * dependency injection, guards, routing and the error envelope without
- * requiring PostgreSQL. Database-backed paths are covered by integration
+ * requiring MySQL. Database-backed paths are covered by integration
  * tests once a database is available.
  */
 describe('API smoke', () => {

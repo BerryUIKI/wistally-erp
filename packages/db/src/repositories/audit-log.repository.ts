@@ -1,8 +1,9 @@
 import type { AuditLogEntry, AuditLogRepository } from '@wistally/domain';
 import type { Tx } from '@wistally/kernel';
-import { and, desc, eq, lt } from 'drizzle-orm';
+import { desc, eq, lt } from 'drizzle-orm';
 
 import { auditLogs } from '../schema/platform.js';
+import { affectedRows } from './result.js';
 import { asDb } from './tx.js';
 
 export class DrizzleAuditLogRepository implements AuditLogRepository {
@@ -44,10 +45,7 @@ export class DrizzleAuditLogRepository implements AuditLogRepository {
   }
 
   async deleteOlderThan(tx: Tx, cutoff: Date): Promise<number> {
-    const deleted = await asDb(tx)
-      .delete(auditLogs)
-      .where(and(lt(auditLogs.createdAt, cutoff)))
-      .returning({ id: auditLogs.id });
-    return deleted.length;
+    const result = await asDb(tx).delete(auditLogs).where(lt(auditLogs.createdAt, cutoff));
+    return affectedRows(result);
   }
 }

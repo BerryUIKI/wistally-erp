@@ -1,87 +1,90 @@
 import {
   boolean,
+  char,
+  datetime,
   index,
-  integer,
-  pgTable,
+  int,
+  mysqlTable,
   primaryKey,
-  text,
-  timestamp,
   uniqueIndex,
-  uuid,
-} from 'drizzle-orm/pg-core';
+  varchar,
+} from 'drizzle-orm/mysql-core';
 
 import { companies } from './common.js';
 
-export const users = pgTable(
+const createdAt = () => datetime('created_at', { mode: 'date', fsp: 3 }).notNull();
+const updatedAt = () => datetime('updated_at', { mode: 'date', fsp: 3 }).notNull();
+
+export const users = mysqlTable(
   'users',
   {
-    id: uuid('id').primaryKey(),
-    companyId: uuid('company_id')
+    id: char('id', { length: 36 }).primaryKey(),
+    companyId: char('company_id', { length: 36 })
       .notNull()
       .references(() => companies.id),
-    email: text('email').notNull(),
-    passwordHash: text('password_hash').notNull(),
-    displayName: text('display_name').notNull(),
+    email: varchar('email', { length: 255 }).notNull(),
+    passwordHash: varchar('password_hash', { length: 255 }).notNull(),
+    displayName: varchar('display_name', { length: 120 }).notNull(),
     isActive: boolean('is_active').notNull().default(true),
-    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
-    version: integer('version').notNull().default(1),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+    version: int('version').notNull().default(1),
   },
   (table) => [uniqueIndex('uq_users_company_email').on(table.companyId, table.email)],
 );
 
-export const roles = pgTable(
+export const roles = mysqlTable(
   'roles',
   {
-    id: uuid('id').primaryKey(),
-    companyId: uuid('company_id')
+    id: char('id', { length: 36 }).primaryKey(),
+    companyId: char('company_id', { length: 36 })
       .notNull()
       .references(() => companies.id),
-    code: text('code').notNull(),
-    name: text('name').notNull(),
+    code: varchar('code', { length: 64 }).notNull(),
+    name: varchar('name', { length: 120 }).notNull(),
     isSystem: boolean('is_system').notNull().default(false),
-    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    createdAt: createdAt(),
   },
   (table) => [uniqueIndex('uq_roles_company_code').on(table.companyId, table.code)],
 );
 
-export const userRoles = pgTable(
+export const userRoles = mysqlTable(
   'user_roles',
   {
-    userId: uuid('user_id')
+    userId: char('user_id', { length: 36 })
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
-    roleId: uuid('role_id')
+    roleId: char('role_id', { length: 36 })
       .notNull()
       .references(() => roles.id, { onDelete: 'cascade' }),
   },
   (table) => [primaryKey({ columns: [table.userId, table.roleId] })],
 );
 
-export const rolePermissions = pgTable(
+export const rolePermissions = mysqlTable(
   'role_permissions',
   {
-    roleId: uuid('role_id')
+    roleId: char('role_id', { length: 36 })
       .notNull()
       .references(() => roles.id, { onDelete: 'cascade' }),
-    permissionCode: text('permission_code').notNull(),
+    permissionCode: varchar('permission_code', { length: 100 }).notNull(),
   },
   (table) => [primaryKey({ columns: [table.roleId, table.permissionCode] })],
 );
 
-export const sessions = pgTable(
+export const sessions = mysqlTable(
   'sessions',
   {
-    id: uuid('id').primaryKey(),
-    userId: uuid('user_id')
+    id: char('id', { length: 36 }).primaryKey(),
+    userId: char('user_id', { length: 36 })
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
-    tokenHash: text('token_hash').notNull().unique(),
-    ip: text('ip'),
-    userAgent: text('user_agent'),
-    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
-    lastSeenAt: timestamp('last_seen_at', { withTimezone: true }).notNull().defaultNow(),
-    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+    tokenHash: varchar('token_hash', { length: 64 }).notNull().unique(),
+    ip: varchar('ip', { length: 45 }),
+    userAgent: varchar('user_agent', { length: 512 }),
+    createdAt: createdAt(),
+    lastSeenAt: datetime('last_seen_at', { mode: 'date', fsp: 3 }).notNull(),
+    expiresAt: datetime('expires_at', { mode: 'date', fsp: 3 }).notNull(),
   },
   (table) => [
     index('idx_sessions_user').on(table.userId),

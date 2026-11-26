@@ -1,6 +1,8 @@
 # ADR-0003: PostgreSQL + Drizzle + pg-boss; no Redis, no message broker
 
-- **Status**: Accepted
+- **Status**: Superseded by [ADR-0008](0008-mysql-primary-postgres-shelved.md) — the database is now
+  MySQL 8 and pg-boss is replaced by an in-database queue. The "no Redis, no message broker"
+  principle still holds. The PostgreSQL implementation is preserved at commit `7c04ea4`.
 - **Date**: 2026-11-26
 - **Deciders**: Project owner
 

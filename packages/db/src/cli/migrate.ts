@@ -6,6 +6,6 @@ try {
   // .env is optional; environment variables win.
 }
 
-const url = process.env.DATABASE_URL ?? 'postgres://wistally:wistally@localhost:5432/wistally';
+const url = process.env.DATABASE_URL ?? 'mysql://wistally:wistally@localhost:3306/wistally';
 await runMigrations(url);
 console.log('[db] migrations applied');

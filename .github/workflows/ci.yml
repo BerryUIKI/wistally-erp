@@ -15,22 +15,23 @@ jobs:
     timeout-minutes: 15
 
     services:
-      postgres:
-        image: postgres:16
+      mysql:
+        image: mysql:8.4
         env:
-          POSTGRES_USER: wistally
-          POSTGRES_PASSWORD: wistally
-          POSTGRES_DB: wistally_test
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: wistally_test
+          MYSQL_USER: wistally
+          MYSQL_PASSWORD: wistally
         ports:
-          - 5432:5432
+          - 3306:3306
         options: >-
-          --health-cmd "pg_isready -U wistally"
+          --health-cmd "mysqladmin ping -h 127.0.0.1 -uwistally -pwistally"
           --health-interval 5s
           --health-timeout 5s
           --health-retries 10
 
     env:
-      DATABASE_URL: postgres://wistally:wistally@localhost:5432/wistally_test
+      DATABASE_URL: mysql://wistally:wistally@localhost:3306/wistally_test
 
     steps:
       - uses: actions/checkout@v4
@@ -67,3 +68,6 @@ jobs:
         run: |
           pnpm db:seed
           pnpm db:seed
+
+      - name: Integration tests
+        run: pnpm test:integration

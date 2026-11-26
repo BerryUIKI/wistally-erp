@@ -7,8 +7,7 @@ try {
 }
 
 const result = await seedDatabase({
-  connectionString:
-    process.env.DATABASE_URL ?? 'postgres://wistally:wistally@localhost:5432/wistally',
+  connectionString: process.env.DATABASE_URL ?? 'mysql://wistally:wistally@localhost:3306/wistally',
   companyCode: process.env.SEED_COMPANY_CODE ?? 'WT',
   companyName: process.env.SEED_COMPANY_NAME ?? 'WisTally Demo Company',
   adminEmail: process.env.SEED_ADMIN_EMAIL ?? 'admin@wistally.local',

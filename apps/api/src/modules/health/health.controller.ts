@@ -1,5 +1,5 @@
 import { Controller, Get, Inject } from '@nestjs/common';
-import type { Pool } from 'pg';
+import type { Pool } from 'mysql2/promise';
 
 import { Public } from '../../common/decorators.js';
 import { TOKENS } from '../../tokens.js';

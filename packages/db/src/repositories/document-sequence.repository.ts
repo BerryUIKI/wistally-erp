@@ -5,7 +5,7 @@ import type {
 } from '@wistally/domain';
 import type { Tx } from '@wistally/kernel';
 import { uuidv7 } from '@wistally/kernel';
-import { type SQL, and, eq } from 'drizzle-orm';
+import { type SQL, and, eq, sql } from 'drizzle-orm';
 
 import type { Database } from '../client.js';
 import { documentSequences } from '../schema/platform.js';
@@ -13,6 +13,13 @@ import { asDb } from './tx.js';
 
 type SequenceRow = typeof documentSequences.$inferSelect;
 
+/**
+ * Allocates a gapless document number.
+ *
+ * MySQL has no `RETURNING`, so the row is locked first, incremented second.
+ * The lock is held until commit, which serialises concurrent callers and — just
+ * as importantly — rolls the number back when the transaction fails.
+ */
 export class DrizzleDocumentSequenceRepository implements DocumentSequenceRepository {
   async allocate(tx: Tx, input: AllocateDocumentNumberInput): Promise<DocumentNumber> {
     const db = asDb(tx);
@@ -35,7 +42,10 @@ export class DrizzleDocumentSequenceRepository implements DocumentSequenceReposi
           nextNo: 1,
           width: input.padding,
         })
-        .onConflictDoNothing();
+        // MySQL has no `INSERT IGNORE` in drizzle's builder; a self-assignment
+        // is a no-op that still contends for the unique key, which is what we
+        // need when two transactions race to create the sequence row.
+        .onDuplicateKeyUpdate({ set: { id: sql`id` } });
       row = await lockRow(db, scope);
     }
 

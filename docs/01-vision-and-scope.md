@@ -125,7 +125,7 @@ The MVP is not a checklist of features. It is the following verifiable facts:
 | Monorepo | One repository, one CI, one commit spanning backend and frontend |
 | Trunk-based | `main` is always deployable; therefore the database only rolls forward and large features hide behind flags |
 | On-premises deployment | No cloud-managed services may be assumed. Installer, upgrade, backup, and restore are first-class |
-| No dedicated ops staff | Minimize dependencies: PostgreSQL, the application, and object storage. Nothing else |
+| No dedicated ops staff | Minimize dependencies: MySQL, the application, and object storage. Nothing else |
 
 ## 9. Risks and stance
 

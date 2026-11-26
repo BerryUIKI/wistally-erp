@@ -1,68 +1,68 @@
 import {
   boolean,
+  char,
   date,
+  datetime,
   index,
-  integer,
-  pgTable,
-  text,
-  timestamp,
+  int,
+  mysqlTable,
   uniqueIndex,
-  uuid,
-} from 'drizzle-orm/pg-core';
+  varchar,
+} from 'drizzle-orm/mysql-core';
 
 import { companies } from './common.js';
 
-export const warehouses = pgTable(
+const timestamps = () => ({
+  createdAt: datetime('created_at', { mode: 'date', fsp: 3 }).notNull(),
+  createdBy: char('created_by', { length: 36 }).notNull(),
+  updatedAt: datetime('updated_at', { mode: 'date', fsp: 3 }).notNull(),
+  updatedBy: char('updated_by', { length: 36 }).notNull(),
+  version: int('version').notNull().default(1),
+});
+
+export const warehouses = mysqlTable(
   'warehouses',
   {
-    id: uuid('id').primaryKey(),
-    companyId: uuid('company_id')
+    id: char('id', { length: 36 }).primaryKey(),
+    companyId: char('company_id', { length: 36 })
       .notNull()
       .references(() => companies.id),
-    code: text('code').notNull(),
-    name: text('name').notNull(),
-    address: text('address'),
+    code: varchar('code', { length: 20 }).notNull(),
+    name: varchar('name', { length: 100 }).notNull(),
+    address: varchar('address', { length: 200 }),
     isActive: boolean('is_active').notNull().default(true),
-    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
-    createdBy: uuid('created_by').notNull(),
-    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
-    updatedBy: uuid('updated_by').notNull(),
-    version: integer('version').notNull().default(1),
+    ...timestamps(),
   },
   (table) => [uniqueIndex('uq_warehouses_company_code').on(table.companyId, table.code)],
 );
 
-export const departments = pgTable(
+export const departments = mysqlTable(
   'departments',
   {
-    id: uuid('id').primaryKey(),
-    companyId: uuid('company_id')
+    id: char('id', { length: 36 }).primaryKey(),
+    companyId: char('company_id', { length: 36 })
       .notNull()
       .references(() => companies.id),
-    code: text('code').notNull(),
-    name: text('name').notNull(),
+    code: varchar('code', { length: 20 }).notNull(),
+    name: varchar('name', { length: 100 }).notNull(),
     isActive: boolean('is_active').notNull().default(true),
-    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
-    createdBy: uuid('created_by').notNull(),
-    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
-    updatedBy: uuid('updated_by').notNull(),
-    version: integer('version').notNull().default(1),
+    ...timestamps(),
   },
   (table) => [uniqueIndex('uq_departments_company_code').on(table.companyId, table.code)],
 );
 
-export const fiscalPeriods = pgTable(
+export const fiscalPeriods = mysqlTable(
   'fiscal_periods',
   {
-    id: uuid('id').primaryKey(),
-    companyId: uuid('company_id')
+    id: char('id', { length: 36 }).primaryKey(),
+    companyId: char('company_id', { length: 36 })
       .notNull()
       .references(() => companies.id),
-    fiscalYear: integer('fiscal_year').notNull(),
-    periodNo: integer('period_no').notNull(),
+    fiscalYear: int('fiscal_year').notNull(),
+    periodNo: int('period_no').notNull(),
     startDate: date('start_date', { mode: 'string' }).notNull(),
     endDate: date('end_date', { mode: 'string' }).notNull(),
-    status: text('status').notNull().default('open'),
+    status: varchar('status', { length: 16 }).notNull().default('open'),
   },
   (table) => [
     uniqueIndex('uq_fiscal_periods_company_year_no').on(

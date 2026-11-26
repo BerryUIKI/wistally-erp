@@ -253,11 +253,11 @@ Update requests carry a `version` field. The server issues `WHERE version = ?`; 
 
 For on-premises deployment, **server-side sessions** beat JWTs:
 
-| Requirement | Session (stored in PostgreSQL) | JWT |
+| Requirement | Session (stored in MySQL) | JWT |
 |---|---|---|
 | Revoke immediately | ✅ Delete the row | ❌ Wait for expiry |
 | Permission change takes effect now | ✅ Read on every request | ❌ Needs a revocation list |
-| Multiple instances | ✅ Shared PostgreSQL | ✅ |
+| Multiple instances | ✅ Shared MySQL | ✅ |
 | Stateless horizontal scaling | ❌ | ✅ (not needed here) |
 
 ```sql
@@ -349,12 +349,12 @@ The table is the core widget of an ERP. A shared `DataTable` provides:
                 ▼              ▼              ▼
          ┌───────────┐  ┌───────────┐  ┌───────────┐
          │  api      │  │  web      │  │  worker   │
-         │  :3000    │  │ (static)  │  │ (pg-boss) │
+         │  :3000    │  │ (static)  │  │ (jobs)    │
          └─────┬─────┘  └───────────┘  └─────┬─────┘
                └───────────────┬─────────────┘
                                ▼
                     ┌─────────────────────┐
-                    │  PostgreSQL 16      │
+                    │  MySQL 8.4          │
                     └─────────────────────┘
                                │
                     ┌─────────────────────┐
@@ -362,7 +362,7 @@ The table is the core widget of an ERP. A shared `DataTable` provides:
                     └─────────────────────┘
 ```
 
-**Five containers, no more**: `caddy`, `api`, `worker`, `postgres`, `minio`. The web app is static files served
+**Five containers, no more**: `caddy`, `api`, `worker`, `mysql`, `minio`. The web app is static files served
 by Caddy.
 
 `docker-compose.prod.yml` requirements:
@@ -381,7 +381,7 @@ Do this well or nothing else matters — the customer will not buy a system they
 |---|---|
 | Install | `docker compose up -d`, one `.env` for ports, passwords, and domain |
 | Upgrade | Change the image tag → pending migrations run on startup → healthy check gates success |
-| Migration concurrency | PostgreSQL advisory lock so only one instance runs migrations |
+| Migration concurrency | MySQL named lock (`GET_LOCK`) so only one instance runs migrations |
 | Backup | `scripts/backup.sh`: `pg_dump` full plus attachment volume; retains N copies; optional push to object storage |
 | Restore | `scripts/restore.sh`: takes a backup file and requires a second confirmation |
 | Licensing | Offline signed file (Ed25519) limiting users and companies; an invalid license degrades to read-only, never locks the customer out |

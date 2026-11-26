@@ -13,12 +13,11 @@
   },
   "dependencies": {
     "@wistally/db": "workspace:*",
-    "pg": "^8.13.1",
-    "pg-boss": "^9.0.3"
+    "@wistally/kernel": "workspace:*",
+    "mysql2": "^3.24.6"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",
-    "@types/pg": "^8.11.10",
     "@wistally/config": "workspace:*",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2",

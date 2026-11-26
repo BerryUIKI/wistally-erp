@@ -287,10 +287,10 @@ This is where bugs breed. The rules are fixed.
 
 | Item | Precision | Notes |
 |---|---|---|
-| Database amounts | `NUMERIC(19,6)` | Six decimals; enough for currency precision plus intermediate math |
+| Database amounts | `DECIMAL(19,6)` | Six decimals; enough for currency precision plus intermediate math |
 | Display precision | `currencies.decimal_places` | CNY=2, JPY=0, KWD=3 |
-| Exchange rate | `NUMERIC(19,8)` | Eight decimals |
-| Quantity | `NUMERIC(19,6)` | Supports weight-based items |
+| Exchange rate | `DECIMAL(19,8)` | Eight decimals |
+| Quantity | `DECIMAL(19,6)` | Supports weight-based items |
 
 **Line-level calculation**
 
@@ -338,10 +338,10 @@ Close is a **long-running operation** and must be structured as:
 The MVP reserves fixed dimension columns on `ledger_entries` rather than building a flexible dimension engine:
 
 ```
-party_id · department_id · cost_center_id · item_category_id · warehouse_id · dimensions(jsonb)
+party_id · department_id · cost_center_id · item_category_id · warehouse_id · dimensions(json)
 ```
 
-Fixed columns keep report SQL simple and indexes efficient. `dimensions jsonb` is an escape hatch, but **core
+Fixed columns keep report SQL simple and indexes efficient. `dimensions json` is an escape hatch, but **core
 reports never depend on it**.
 
 ## 6. Document numbering
@@ -351,7 +351,7 @@ reports never depend on it**.
 | Type | Implementation | Properties | Used for |
 |---|---|---|---|
 | Strictly gapless | `document_sequences` row lock + same-transaction increment | A rollback returns the number; serializes per sequence | Invoices and vouchers with compliance requirements |
-| Gaps allowed | PostgreSQL `SEQUENCE` (`nextval`) | High concurrency, no locks; rollbacks leave gaps | Stock transactions, internal logs |
+| Gaps allowed | An `AUTO_INCREMENT` column or an application counter | High concurrency, no locks; rollbacks leave gaps | Stock transactions, internal logs |
 
 **All business documents default to strictly gapless.** Trading companies must issue consecutive invoice
 numbers; a gap invites the customer to question the entire book. The cost is that concurrent posting within
@@ -361,15 +361,24 @@ one `(company, doc type, period)` serializes — acceptable at 20 concurrent use
 ### 6.2 Implementation
 
 ```sql
+SELECT prefix, next_no, width
+  FROM document_sequences
+ WHERE company_id = ? AND doc_type = ? AND period_key = ?
+   FOR UPDATE;
+
 UPDATE document_sequences
    SET next_no = next_no + 1
- WHERE company_id = $1 AND doc_type = $2 AND period_key = $3
-RETURNING prefix, next_no, width;
+ WHERE id = ?;
 ```
+
+MySQL has no `RETURNING`, so the number is read and incremented in two statements. The lock taken by
+`FOR UPDATE` is held until commit, so both the serialisation and the "a rollback returns the number"
+guarantee survive the split.
 
 - The row lock serializes access; other transactions block until commit.
 - On rollback, `next_no` rolls back too, so the number is reused and no gap appears.
-- The sequence row is created lazily (`ON CONFLICT DO NOTHING` followed by a retry).
+- The sequence row is created lazily (`INSERT ... ON DUPLICATE KEY UPDATE id = id` followed by a re-read under
+  `FOR UPDATE`).
 
 Format: `{prefix}-{period_key}-{padded_no}`, e.g. `SO-202611-0001`.
 
@@ -385,7 +394,7 @@ Format: `{prefix}-{period_key}-{padded_no}`, e.g. `SO-202611-0001`.
 | Allocation | `SELECT ... FOR UPDATE` on `open_items` |
 | Period close | `SELECT ... FOR UPDATE` on `fiscal_periods` inside the close transaction |
 
-**No distributed locks.** Every point that needs serialization lives in PostgreSQL. A single database is enough.
+**No distributed locks.** Every point that needs serialization lives in MySQL. A single database is enough.
 
 ### 7.2 Idempotency
 
@@ -415,7 +424,7 @@ Inside the business transaction: write outbox_events
            ↓ (commit)
 Worker polls: SELECT ... FOR UPDATE SKIP LOCKED
            ↓
-Dispatch to pg-boss → consumers (email, materialized view refresh, external systems)
+Dispatch to the job queue → consumers (email, materialized view refresh, external systems)
 ```
 
 **Events serve side effects only, never the core business path.** See

@@ -20,7 +20,7 @@ boundaries. Turborepo and enforced boundary rules are cheaper than version skew.
 WisTally_ERP/
 ├─ apps/                        # deployable units
 │  ├─ api/                      # HTTP service (NestJS)
-│  ├─ worker/                   # background job consumer (pg-boss)
+│  ├─ worker/                   # background job consumer (in-database queue)
 │  └─ web/                      # SPA (React + Vite)
 │
 ├─ packages/                    # internal libraries, never published to npm
@@ -70,7 +70,7 @@ apps/api/src/
 │  ├─ reporting/
 │  └─ platform/
 └─ bootstrap/
-   ├─ migrations.ts         # run migrations on startup (advisory lock)
+   ├─ migrations.ts         # run migrations on startup (named lock)
    └─ openapi.ts
 ```
 
@@ -314,7 +314,7 @@ monorepo must preserve.
 | `typecheck` | ✅ | Same |
 | `lint` | ✅ | Same |
 | `test` (unit) | ✅ | Pure functions |
-| `test:integration` | ❌ | Depends on a real PostgreSQL instance |
+| `test:integration` | ❌ | Depends on a real MySQL instance |
 | `e2e` | ❌ | Same |
 | `dev` | ❌ | Long-running process |
 
@@ -432,7 +432,7 @@ Follow the order. Every step leaves the tree compiling. **Do not write everythin
 - [ ] Add controllers and module wiring in `apps/api/src/modules/<module>/`
 - [ ] Register permission points in `packages/db/src/seed/05-permissions.ts`
 - [ ] Add routes and menu entries under `apps/web/src/routes/`
-- [ ] Write integration tests (Testcontainers + real PostgreSQL)
+- [ ] Write integration tests (Testcontainers + real MySQL)
 - [ ] Update the context inventory in `docs/02-domain-model.md`
 - [ ] Add a changeset
 
@@ -443,7 +443,7 @@ appears in the documentation's context inventory.
 
 ```bash
 pnpm install
-docker compose -f deploy/docker-compose.dev.yml up -d   # PostgreSQL + MinIO
+docker compose -f deploy/docker-compose.dev.yml up -d   # MySQL + MinIO
 pnpm db:migrate
 pnpm db:seed
 pnpm dev                                                # turbo runs api / worker / web in parallel
@@ -454,7 +454,7 @@ pnpm dev                                                # turbo runs api / worke
 | `pnpm dev` | Run all three apps with hot reload |
 | `pnpm build` | Full build (Turbo cached) |
 | `pnpm verify` | typecheck + lint + boundaries + unit tests (must be green before pushing) |
-| `pnpm test:integration` | Integration tests against a throwaway PostgreSQL container |
+| `pnpm test:integration` | Integration tests against a throwaway MySQL container |
 | `pnpm test:e2e` | Playwright |
 | `pnpm db:generate` | Generate migration SQL from the schema (must be reviewed by a human) |
 | `pnpm db:migrate` | Apply pending migrations |

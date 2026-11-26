@@ -38,8 +38,12 @@ const CURRENCIES = [
 export async function seedDatabase(options: SeedOptions): Promise<SeedResult> {
   const { pool, db } = createDatabase(options.connectionString, 2);
   try {
+    const existingCurrencies = await db.select({ code: currencies.code }).from(currencies);
+    const knownCurrencies = new Set(existingCurrencies.map((row) => row.code));
     for (const currency of CURRENCIES) {
-      await db.insert(currencies).values(currency).onConflictDoNothing();
+      if (!knownCurrencies.has(currency.code)) {
+        await db.insert(currencies).values(currency);
+      }
     }
 
     const existing = await db

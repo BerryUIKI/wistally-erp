@@ -11,7 +11,7 @@ export interface AppConfig {
 
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
   return {
-    databaseUrl: env.DATABASE_URL ?? 'postgres://wistally:wistally@localhost:5432/wistally',
+    databaseUrl: env.DATABASE_URL ?? 'mysql://wistally:wistally@localhost:3306/wistally',
     port: Number(env.PORT ?? 3000),
     host: env.HOST ?? '0.0.0.0',
     cookieSecure: env.COOKIE_SECURE === 'true',

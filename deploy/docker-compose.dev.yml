@@ -1,19 +1,21 @@
 name: Development services
 
 services:
-  postgres:
-    image: postgres:16-alpine
-    container_name: wistally-postgres
+  mysql:
+    image: mysql:8.4
+    container_name: wistally-mysql
     environment:
-      POSTGRES_USER: wistally
-      POSTGRES_PASSWORD: wistally
-      POSTGRES_DB: wistally
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: wistally
+      MYSQL_USER: wistally
+      MYSQL_PASSWORD: wistally
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_0900_ai_ci
     ports:
-      - "5432:5432"
+      - "3306:3306"
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - mysqldata:/var/lib/mysql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U wistally -d wistally"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uwistally", "-pwistally"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -32,5 +34,5 @@ services:
       - miniodata:/data
 
 volumes:
-  pgdata:
+  mysqldata:
   miniodata:

@@ -3,6 +3,7 @@ import type { Tx } from '@wistally/kernel';
 import { eq, lt } from 'drizzle-orm';
 
 import { sessions } from '../schema/iam.js';
+import { affectedRows } from './result.js';
 import { asDb } from './tx.js';
 
 export class DrizzleSessionRepository implements SessionRepository {
@@ -49,10 +50,7 @@ export class DrizzleSessionRepository implements SessionRepository {
   }
 
   async deleteExpired(tx: Tx, now: Date): Promise<number> {
-    const deleted = await asDb(tx)
-      .delete(sessions)
-      .where(lt(sessions.expiresAt, now))
-      .returning({ id: sessions.id });
-    return deleted.length;
+    const result = await asDb(tx).delete(sessions).where(lt(sessions.expiresAt, now));
+    return affectedRows(result);
   }
 }

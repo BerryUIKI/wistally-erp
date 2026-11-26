@@ -149,7 +149,7 @@ A PR may merge only when all of the following hold:
 | 3. Build | Affected-only build | 120 s | Block |
 | 4. Unit tests | Affected packages | 60 s | Block |
 | 5. Migration checks | Replay migrations + old-code compatibility | 120 s | Block |
-| 6. Integration tests | Testcontainers + PostgreSQL | 180 s | Block |
+| 6. Integration tests | Testcontainers + MySQL | 180 s | Block |
 | **Total** | | **≤ 10 minutes** | |
 
 CI that exceeds ten minutes starts getting bypassed. E2E tests run separately (post-merge or nightly) and never
@@ -208,14 +208,17 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     services:
-      postgres:
-        image: postgres:16
+      mysql:
+        image: mysql:8.4
         env:
-          POSTGRES_PASSWORD: postgres
-        ports: ['5432:5432']
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: wistally_test
+          MYSQL_USER: wistally
+          MYSQL_PASSWORD: wistally
+        ports: ['3306:3306']
         options: >-
-          --health-cmd pg_isready --health-interval 5s
-          --health-timeout 5s --health-retries 10
+          --health-cmd "mysqladmin ping -h 127.0.0.1 -uwistally -pwistally"
+          --health-interval 5s --health-timeout 5s --health-retries 10
     steps:
       - uses: actions/checkout@v4
         with: { fetch-depth: 0 }
@@ -243,7 +246,7 @@ jobs:
       - name: Integration tests
         run: pnpm turbo run test:integration --filter='...[origin/main]'
         env:
-          DATABASE_URL: postgres://postgres:postgres@localhost:5432/wistally_test
+          DATABASE_URL: mysql://wistally:wistally@localhost:3306/wistally_test
 ```
 
 ### 4.5 When `main` goes red
@@ -276,7 +279,7 @@ The rules are defined in [05 §10](05-data-and-tenancy.md#10-migration-rules). T
 | Breaking changes span at least three releases (expand → switch → contract) | Same |
 | A merged migration file is never edited | An applied migration that changes diverges from production |
 | CI replays migrations from scratch | Prevents schema drift from local manual edits |
-| Migrations run automatically on startup under an advisory lock | On-premises deployments have no DBA |
+| Migrations run automatically on startup under a named lock | On-premises deployments have no DBA |
 
 **One hard line**: migrations on `main` only ever add, or add-then-remove later. Any `DROP COLUMN`, `ALTER TYPE`,
 or `RENAME` may appear only after the previous version has stopped using the old shape.

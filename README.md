@@ -14,7 +14,7 @@ Monorepo · trunk-based development · TypeScript end to end.
 - company / warehouse / fiscal period organization data, tenant-scoped by `company_id`
 - append-only audit log written inside the same transaction as the change
 - gapless document numbering service
-- pg-boss background worker with a scheduled maintenance job
+- in-database job queue with a scheduled maintenance job
 
 Business modules (purchasing, sales, inventory, accounting) are M1–M5. See
 [docs/08-roadmap.md](docs/08-roadmap.md).
@@ -25,15 +25,15 @@ Business modules (purchasing, sales, inventory, accounting) are M1–M5. See
 |---|---|
 | Node.js | 22 or newer |
 | pnpm | 11 (`corepack enable && corepack prepare pnpm@11.18.0 --activate`) |
-| Docker | optional, for local PostgreSQL and MinIO |
+| Docker | optional, for local MySQL and MinIO |
 
 ## Quick start
 
 ```bash
 pnpm install
 
-# 1. Start PostgreSQL (and MinIO, unused in M0)
-docker compose -f deploy/docker-compose.dev.yml up -d postgres
+# 1. Start MySQL (and MinIO, unused in M0)
+docker compose -f deploy/docker-compose.dev.yml up -d mysql
 
 # 2. Create the schema and the initial books
 pnpm db:migrate
@@ -69,7 +69,7 @@ The Vite dev server proxies `/api` to `http://localhost:3000`, so cookies stay s
 ```
 apps/
   api/        NestJS + Fastify HTTP service
-  worker/     pg-boss background jobs
+  worker/     background job consumer
   web/        React + Vite SPA
 packages/
   kernel/     Money, Quantity, Result, Clock, UnitOfWork (zero IO)
@@ -83,7 +83,7 @@ deploy/       Compose files
 ```
 
 Dependency direction is enforced in CI: `kernel ← domain ← application ← api/worker`, and
-`application` may never import `db`. Use cases see ports, not PostgreSQL.
+`application` may never import `db`. Use cases see ports, not the database.
 
 ## Documentation
 
