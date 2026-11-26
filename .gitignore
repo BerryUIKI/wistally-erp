@@ -44,3 +44,4 @@ tmp/
 
 # Local dev overrides
 docker-compose.override.yml
+.claude/settings.local.json
