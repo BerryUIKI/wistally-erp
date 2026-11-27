@@ -7,13 +7,16 @@ Monorepo · trunk-based development · TypeScript end to end.
 
 ## Status
 
-**M0 — Foundation.** The engineering scaffolding is in place and the vertical slice below works:
+**M1 — Master data and inventory.** The engineering scaffolding is in place and the vertical slice
+below works:
 
 - session authentication (httpOnly cookie, argon2id, CSRF double-submit)
 - three-layer permission model, function-level enforcement wired end to end
 - company / warehouse / fiscal period organization data, tenant-scoped by `company_id`
 - customer and supplier master data sharing one record, with contacts, addresses and credit limits
 - item master data with categories, units of measure, conversion chains and barcodes
+- stock balances per warehouse and item, manual receipts and issues valued at the moving
+  weighted average, an append-only stock ledger, and a guard that keeps stock non-negative
 - append-only audit log written inside the same transaction as the change
 - gapless document numbering service
 - in-database job queue with a scheduled maintenance job

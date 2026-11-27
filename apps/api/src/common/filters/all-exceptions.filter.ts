@@ -13,6 +13,7 @@ function statusForDomainCode(code: string): number {
   if (code === 'AUTH.INVALID_CREDENTIALS') return HttpStatus.UNAUTHORIZED;
   if (code.startsWith('AUTH.')) return HttpStatus.FORBIDDEN;
   if (code.endsWith('_NOT_FOUND')) return HttpStatus.NOT_FOUND;
+  if (code === 'INVENTORY.INSUFFICIENT_STOCK') return HttpStatus.CONFLICT;
   if (code.includes('TAKEN') || code.includes('CONFLICT')) return HttpStatus.CONFLICT;
   return HttpStatus.UNPROCESSABLE_ENTITY;
 }

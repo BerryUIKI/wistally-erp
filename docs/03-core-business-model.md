@@ -145,21 +145,29 @@ Journal entries are in [§5.3](#53-posting-rules).
 
 ### 3.5 Negative stock
 
-Forbidden by default. Concurrency safety comes from a conditional update:
+Forbidden by default. MySQL has no `UPDATE ... RETURNING`, so the costed update reads the row under
+a lock:
 
 ```sql
-UPDATE inventory_balances
-   SET qty = qty + $delta,
-       total_value = total_value + $value_delta,
-       version = version + 1
+SELECT * FROM inventory_balances
  WHERE company_id = $c AND warehouse_id = $w AND item_id = $i
-   AND qty + $delta >= 0            -- this predicate is what prevents negative stock
-RETURNING qty, total_value;
+ FOR UPDATE;                                   -- serialises movements of this pair
+
+-- compute the moving average from qty / total_value, then update:
+UPDATE inventory_balances
+   SET qty = $new_qty, total_value = $new_value, version = version + 1
+ WHERE id = $id AND version = $old_version
+   AND qty + $delta >= 0;                      -- defence in depth
 ```
 
-A zero row count means insufficient stock: roll back the whole transaction and return a business error.
-Companies that allow negative stock can drop the predicate — but the `allow_negative` flag is still recorded
-and highlighted in reports.
+Insufficient stock is detected while holding the lock (`qty < $delta`): roll back the whole
+transaction and return a business error. A `CHECK (qty >= 0)` constraint backs this up at the
+database level. Companies that allow negative stock can drop the predicate — but the
+`allow_negative` flag is still recorded and highlighted in reports.
+
+Two receipts for a warehouse × item pair that has no balance row yet can race on the insert, and
+InnoDB may resolve the cycle with a deadlock. The unit of work replays the transaction up to three
+times on error 1213/1205; every use-case transaction is pure database work, so replaying is safe.
 
 ## 4. Receivables and payables
 

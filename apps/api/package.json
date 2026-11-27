@@ -8,6 +8,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "biome check src",
     "test": "vitest run --passWithNoTests",
+    "test:integration": "vitest run integration",
     "dev": "tsx watch src/main.ts",
     "start": "node dist/main.js"
   },
