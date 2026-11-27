@@ -18,7 +18,8 @@
     "verify": "pnpm lint && pnpm typecheck && pnpm depcruise && pnpm test",
     "db:generate": "pnpm --filter @wistally/db generate",
     "db:migrate": "pnpm --filter @wistally/db migrate",
-    "db:seed": "pnpm --filter @wistally/db seed"
+    "db:seed": "pnpm --filter @wistally/db seed",
+    "db:seed-demo": "pnpm --filter @wistally/db seed-demo"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",

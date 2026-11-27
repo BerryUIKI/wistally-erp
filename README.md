@@ -13,6 +13,7 @@ Monorepo · trunk-based development · TypeScript end to end.
 - three-layer permission model, function-level enforcement wired end to end
 - company / warehouse / fiscal period organization data, tenant-scoped by `company_id`
 - customer and supplier master data sharing one record, with contacts, addresses and credit limits
+- item master data with categories, units of measure, conversion chains and barcodes
 - append-only audit log written inside the same transaction as the change
 - gapless document numbering service
 - in-database job queue with a scheduled maintenance job
@@ -64,6 +65,7 @@ The Vite dev server proxies `/api` to `http://localhost:3000`, so cookies stay s
 | `pnpm db:generate` | Generate SQL from the Drizzle schema (review before committing) |
 | `pnpm db:migrate` | Apply pending migrations under an advisory lock |
 | `pnpm db:seed` | Create the demo company, roles, admin user and fiscal periods (idempotent) |
+| `pnpm db:seed-demo` | Load a demo catalog: 6 categories, 6 units and 100 items (idempotent) |
 
 ## Layout
 
