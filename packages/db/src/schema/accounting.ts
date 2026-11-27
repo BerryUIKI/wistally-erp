@@ -3,7 +3,9 @@ import {
   type AnyMySqlColumn,
   char,
   check,
+  date,
   datetime,
+  decimal,
   index,
   int,
   mysqlTable,
@@ -12,6 +14,7 @@ import {
 } from 'drizzle-orm/mysql-core';
 
 import { companies } from './common.js';
+import { fiscalPeriods } from './org.js';
 
 const timestamps = () => ({
   createdAt: datetime('created_at', { mode: 'date', fsp: 3 }).notNull(),
@@ -58,5 +61,114 @@ export const accounts = mysqlTable(
       sql`${table.type} in ('asset','liability','equity','revenue','expense')`,
     ),
     check('ck_accounts_code', sql`${table.code} regexp '^[0-9]{3,10}$'`),
+  ],
+);
+
+/**
+ * Double-entry journal entries. Drafts have no document number; the number is
+ * allocated at posting so abandoned drafts cannot leave gaps.
+ */
+export const journalEntries = mysqlTable(
+  'journal_entries',
+  {
+    id: char('id', { length: 36 }).primaryKey(),
+    companyId: char('company_id', { length: 36 })
+      .notNull()
+      .references(() => companies.id),
+    docNo: varchar('doc_no', { length: 32 }),
+    entryDate: date('entry_date', { mode: 'string' }).notNull(),
+    memo: varchar('memo', { length: 500 }).notNull(),
+    status: varchar('status', { length: 16 }).notNull().default('draft'),
+    reversalOfId: char('reversal_of_id', { length: 36 }).references(
+      (): AnyMySqlColumn => journalEntries.id,
+    ),
+    approvedAt: datetime('approved_at', { mode: 'date', fsp: 3 }),
+    approvedBy: char('approved_by', { length: 36 }),
+    postedAt: datetime('posted_at', { mode: 'date', fsp: 3 }),
+    postedBy: char('posted_by', { length: 36 }),
+    ...timestamps(),
+  },
+  (table) => [
+    uniqueIndex('uq_journal_entries_company_doc').on(table.companyId, table.docNo),
+    index('idx_journal_entries_company_date').on(table.companyId, table.entryDate),
+    index('idx_journal_entries_company_status').on(table.companyId, table.status),
+    index('idx_journal_entries_company_reversal').on(table.companyId, table.reversalOfId),
+    check(
+      'ck_journal_entries_status',
+      sql`${table.status} in ('draft','approved','posted','reversed')`,
+    ),
+    check(
+      'ck_journal_entries_doc_no',
+      sql`(${table.status} in ('draft','approved') and ${table.docNo} is null) or (${table.status} in ('posted','reversed') and ${table.docNo} is not null)`,
+    ),
+  ],
+);
+
+export const journalEntryLines = mysqlTable(
+  'journal_entry_lines',
+  {
+    id: char('id', { length: 36 }).primaryKey(),
+    companyId: char('company_id', { length: 36 })
+      .notNull()
+      .references(() => companies.id),
+    journalEntryId: char('journal_entry_id', { length: 36 })
+      .notNull()
+      .references(() => journalEntries.id, { onDelete: 'cascade' }),
+    lineNo: int('line_no').notNull(),
+    accountId: char('account_id', { length: 36 })
+      .notNull()
+      .references(() => accounts.id),
+    side: varchar('side', { length: 6 }).notNull(),
+    amount: decimal('amount', { precision: 19, scale: 6 }).notNull(),
+    memo: varchar('memo', { length: 200 }),
+  },
+  (table) => [
+    uniqueIndex('uq_journal_entry_lines_no').on(table.journalEntryId, table.lineNo),
+    index('idx_journal_entry_lines_company_account').on(table.companyId, table.accountId),
+    check('ck_journal_entry_lines_side', sql`${table.side} in ('debit','credit')`),
+    check('ck_journal_entry_lines_amount', sql`${table.amount} <> 0`),
+  ],
+);
+
+/**
+ * The ledger the reports read. One row per posted line; a reversing entry
+ * writes new rows with negated amounts on the same side.
+ */
+export const ledgerEntries = mysqlTable(
+  'ledger_entries',
+  {
+    id: char('id', { length: 36 }).primaryKey(),
+    companyId: char('company_id', { length: 36 })
+      .notNull()
+      .references(() => companies.id),
+    journalEntryId: char('journal_entry_id', { length: 36 })
+      .notNull()
+      .references(() => journalEntries.id),
+    lineNo: int('line_no').notNull(),
+    accountId: char('account_id', { length: 36 })
+      .notNull()
+      .references(() => accounts.id),
+    periodId: char('period_id', { length: 36 })
+      .notNull()
+      .references(() => fiscalPeriods.id),
+    entryDate: date('entry_date', { mode: 'string' }).notNull(),
+    debitAmount: decimal('debit_amount', { precision: 19, scale: 6 }).notNull().default('0'),
+    creditAmount: decimal('credit_amount', { precision: 19, scale: 6 }).notNull().default('0'),
+    createdAt: datetime('created_at', { mode: 'date', fsp: 3 }).notNull(),
+    createdBy: char('created_by', { length: 36 }).notNull(),
+  },
+  (table) => [
+    uniqueIndex('uq_ledger_entries_line').on(table.journalEntryId, table.lineNo),
+    index('idx_ledger_entries_company_account_date').on(
+      table.companyId,
+      table.accountId,
+      table.entryDate,
+    ),
+    index('idx_ledger_entries_company_date').on(table.companyId, table.entryDate),
+    index('idx_ledger_entries_company_period').on(table.companyId, table.periodId),
+    check(
+      'ck_ledger_entries_one_side',
+      sql`(${table.debitAmount} <> 0 and ${table.creditAmount} = 0) or (${table.debitAmount} = 0 and ${table.creditAmount} <> 0)`,
+    ),
   ],
 );

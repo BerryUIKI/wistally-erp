@@ -1,0 +1,196 @@
+import type { JournalEntryView } from '@wistally/contracts';
+import { useState } from 'react';
+
+import { formatMoney } from '../../lib/format';
+
+const STATUS_BADGES: Record<JournalEntryView['status'], string> = {
+  draft: 'bg-slate-100 text-slate-600',
+  approved: 'bg-sky-50 text-sky-700',
+  posted: 'bg-emerald-50 text-emerald-700',
+  reversed: 'bg-amber-50 text-amber-700',
+};
+
+const STATUS_LABELS: Record<JournalEntryView['status'], string> = {
+  draft: 'Draft',
+  approved: 'Approved',
+  posted: 'Posted',
+  reversed: 'Reversed',
+};
+
+export interface JournalEntryDetailProps {
+  readonly entry: JournalEntryView;
+  readonly canEdit: boolean;
+  readonly canApprove: boolean;
+  readonly canPost: boolean;
+  readonly busy: boolean;
+  readonly onEdit: () => void;
+  readonly onApprove: () => void;
+  readonly onPost: () => void;
+  readonly onReverse: (reason: string) => void;
+  readonly onClose: () => void;
+}
+
+export function JournalEntryDetail({
+  entry,
+  canEdit,
+  canApprove,
+  canPost,
+  busy,
+  onEdit,
+  onApprove,
+  onPost,
+  onReverse,
+  onClose,
+}: JournalEntryDetailProps) {
+  const [reversing, setReversing] = useState(false);
+  const [reason, setReason] = useState('');
+
+  return (
+    <section className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+      <header className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-5 py-4">
+        <div>
+          <div className="flex items-center gap-3">
+            <h2 className="font-mono text-sm font-semibold text-slate-900">
+              {entry.docNo ?? 'Draft entry'}
+            </h2>
+            <span
+              className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
+                STATUS_BADGES[entry.status]
+              }`}
+            >
+              {STATUS_LABELS[entry.status]}
+            </span>
+            {entry.reversalOfId ? (
+              <span className="text-xs text-slate-400">reversing entry</span>
+            ) : null}
+          </div>
+          <p className="mt-0.5 text-xs text-slate-500">
+            {entry.entryDate} · {entry.memo}
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={onClose}
+          className="text-sm font-medium text-slate-500 hover:text-slate-700"
+        >
+          Close
+        </button>
+      </header>
+
+      <table className="w-full text-sm">
+        <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+          <tr>
+            <th className="px-5 py-3 font-medium">Account</th>
+            <th className="px-5 py-3 text-right font-medium">Debit</th>
+            <th className="px-5 py-3 text-right font-medium">Credit</th>
+            <th className="px-5 py-3 font-medium">Memo</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-slate-100">
+          {entry.lines.map((line) => (
+            <tr key={line.id}>
+              <td className="px-5 py-3">
+                <p className="font-mono text-slate-900">{line.accountCode}</p>
+                <p className="text-xs text-slate-500">{line.accountName}</p>
+              </td>
+              <td className="px-5 py-3 text-right font-mono text-slate-900">
+                {line.side === 'debit' ? formatMoney(line.amount) : ''}
+              </td>
+              <td className="px-5 py-3 text-right font-mono text-slate-900">
+                {line.side === 'credit' ? formatMoney(line.amount) : ''}
+              </td>
+              <td className="px-5 py-3 text-slate-500">{line.memo ?? '—'}</td>
+            </tr>
+          ))}
+        </tbody>
+        <tfoot className="bg-slate-50 text-sm">
+          <tr>
+            <td className="px-5 py-3 font-medium text-slate-600">Totals</td>
+            <td className="px-5 py-3 text-right font-mono font-semibold text-slate-900">
+              {formatMoney(entry.totalDebit)}
+            </td>
+            <td className="px-5 py-3 text-right font-mono font-semibold text-slate-900">
+              {formatMoney(entry.totalCredit)}
+            </td>
+            <td />
+          </tr>
+        </tfoot>
+      </table>
+
+      <div className="flex flex-wrap items-center justify-end gap-3 border-t border-slate-200 px-5 py-4">
+        {entry.status === 'draft' && canEdit ? (
+          <button
+            type="button"
+            onClick={onEdit}
+            className="rounded-md border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+          >
+            Edit draft
+          </button>
+        ) : null}
+        {entry.status === 'draft' && canApprove ? (
+          <button
+            type="button"
+            disabled={busy}
+            onClick={onApprove}
+            className="rounded-md bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700 disabled:opacity-60"
+          >
+            Approve
+          </button>
+        ) : null}
+        {entry.status === 'approved' && canPost ? (
+          <button
+            type="button"
+            disabled={busy}
+            onClick={onPost}
+            className="rounded-md bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700 disabled:opacity-60"
+          >
+            Post entry
+          </button>
+        ) : null}
+        {entry.status === 'posted' && canPost && !entry.reversalOfId ? (
+          reversing ? (
+            <div className="flex flex-wrap items-center gap-3">
+              <input
+                aria-label="Reversal reason"
+                value={reason}
+                onChange={(event) => setReason(event.target.value)}
+                maxLength={200}
+                placeholder="Reason (optional)"
+                className="w-64 rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-brand-500"
+              />
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => onReverse(reason)}
+                className="rounded-md bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-60"
+              >
+                Confirm reversal
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setReversing(false);
+                  setReason('');
+                }}
+                className="text-sm font-medium text-slate-500 hover:text-slate-700"
+              >
+                Cancel
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setReversing(true)}
+              className="rounded-md border border-red-200 px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50"
+            >
+              Reverse entry
+            </button>
+          )
+        ) : null}
+        {entry.status === 'reversed' ? (
+          <p className="text-sm text-slate-500">This entry has been reversed.</p>
+        ) : null}
+      </div>
+    </section>
+  );
+}
