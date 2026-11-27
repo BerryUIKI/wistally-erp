@@ -13,6 +13,7 @@ interface NavItem {
 const NAV: readonly NavItem[] = [
   { to: '/', label: 'Dashboard', permission: '' },
   { to: '/catalog', label: 'Catalog', permission: 'catalog.item.view' },
+  { to: '/inventory', label: 'Inventory', permission: 'inventory.balance.view' },
   { to: '/partners', label: 'Partners', permission: 'party.partner.view' },
   { to: '/warehouses', label: 'Warehouses', permission: 'org.warehouse.view' },
 ];

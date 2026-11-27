@@ -6,6 +6,7 @@ export { Quantity, QUANTITY_SCALE } from './quantity.js';
 export { ExchangeRate, RATE_SCALE } from './exchange-rate.js';
 export type { Clock } from './clock.js';
 export { FixedClock, systemClock } from './clock.js';
+export { BUSINESS_DATE_PATTERN, businessDate, isBusinessDate } from './dates.js';
 export type { IdGenerator } from './ids.js';
 export { UuidV7Generator, uuidv7 } from './ids.js';
 export type { Tx, UnitOfWork } from './unit-of-work.js';

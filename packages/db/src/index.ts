@@ -7,6 +7,7 @@ export * from './repositories/audit-log.repository.js';
 export * from './repositories/catalog.repository.js';
 export * from './repositories/company.repository.js';
 export * from './repositories/document-sequence.repository.js';
+export * from './repositories/inventory.repository.js';
 export * from './repositories/item.repository.js';
 export * from './repositories/party.repository.js';
 export * from './repositories/session.repository.js';

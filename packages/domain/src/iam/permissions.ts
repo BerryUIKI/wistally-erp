@@ -34,6 +34,8 @@ export const PERMISSIONS = [
   'purchasing.order.create',
   'purchasing.invoice.post',
   'inventory.balance.view',
+  'inventory.stock.receive',
+  'inventory.stock.issue',
   'inventory.cost.view',
 ] as const;
 
@@ -85,6 +87,7 @@ export const ROLE_DEFINITIONS: readonly RoleDefinition[] = [
       'purchasing.order.create',
       'purchasing.invoice.post',
       'inventory.balance.view',
+      'inventory.stock.receive',
     ],
   },
   {
@@ -100,6 +103,7 @@ export const ROLE_DEFINITIONS: readonly RoleDefinition[] = [
       'sales.order.create',
       'sales.invoice.post',
       'inventory.balance.view',
+      'inventory.stock.issue',
     ],
   },
   {
@@ -111,6 +115,8 @@ export const ROLE_DEFINITIONS: readonly RoleDefinition[] = [
       'catalog.uom.view',
       'party.partner.view',
       'inventory.balance.view',
+      'inventory.stock.receive',
+      'inventory.stock.issue',
     ],
   },
 ];

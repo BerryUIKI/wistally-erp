@@ -4,5 +4,7 @@ export * from './catalog/uoms.js';
 export * from './iam/user-view.js';
 export * from './iam/login.js';
 export * from './iam/session.js';
+export * from './inventory/movements.js';
+export * from './inventory/queries.js';
 export * from './org/warehouses.js';
 export * from './party/parties.js';
