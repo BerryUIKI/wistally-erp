@@ -13,11 +13,10 @@ import type { Tx } from '@wistally/kernel';
 import { Money, Quantity } from '@wistally/kernel';
 import { and, asc, desc, eq, isNull, like, or, sql } from 'drizzle-orm';
 
-import type { Database } from '../client.js';
 import { items, uoms } from '../schema/catalog.js';
-import { companies } from '../schema/common.js';
 import { inventoryBalances, stockTransactions } from '../schema/inventory.js';
 import { warehouses } from '../schema/org.js';
+import { companyCurrency } from './company-currency.js';
 import { asDb } from './tx.js';
 
 type BalanceRow = typeof inventoryBalances.$inferSelect;
@@ -74,19 +73,6 @@ function toTransaction(row: TransactionRow, currency: string): StockTransaction 
     createdAt: row.createdAt,
     createdBy: row.createdBy,
   });
-}
-
-async function companyCurrency(db: Database, companyId: string): Promise<string> {
-  const rows = await db
-    .select({ baseCurrency: companies.baseCurrency })
-    .from(companies)
-    .where(eq(companies.id, companyId))
-    .limit(1);
-  const currency = rows[0]?.baseCurrency;
-  if (!currency) {
-    throw new Error(`Company ${companyId} not found`);
-  }
-  return currency;
 }
 
 function escapeLike(value: string): string {

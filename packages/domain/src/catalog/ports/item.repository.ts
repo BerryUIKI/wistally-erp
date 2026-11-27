@@ -10,6 +10,7 @@ export interface ListItemsFilter {
 
 export interface ItemRepository {
   findById(tx: Tx, companyId: string, id: string): Promise<Item | null>;
+  findByIds(tx: Tx, companyId: string, ids: readonly string[]): Promise<Item[]>;
   findBySku(tx: Tx, companyId: string, sku: string): Promise<Item | null>;
   list(tx: Tx, companyId: string, filter: ListItemsFilter): Promise<Item[]>;
   /** Barcodes in `values` already used by another item of the company. */

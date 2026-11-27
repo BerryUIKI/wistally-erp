@@ -5,3 +5,4 @@ export * from './inventory.js';
 export * from './org.js';
 export * from './party.js';
 export * from './platform.js';
+export * from './stock-documents.js';

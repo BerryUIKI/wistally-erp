@@ -138,6 +138,50 @@ describe('Inventory: receipts', () => {
       expect(result.error.code).toBe('INVENTORY.CURRENCY_MISMATCH');
     }
   });
+
+  it('takes the exact amount when one is supplied', () => {
+    const result = opening().apply(
+      request({
+        quantity: Quantity.fromString('3'),
+        unitCost: Money.fromString('1', CURRENCY),
+        exactAmount: Money.fromString('2.5', CURRENCY),
+      }),
+    );
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value.balance.snapshot.totalValue.toStorageString()).toBe('2.500000');
+      expect(result.value.transaction.snapshot.amountDelta.toStorageString()).toBe('2.500000');
+      expect(result.value.transaction.snapshot.unitCost.toStorageString()).toBe('1.000000');
+    }
+  });
+
+  it('rejects an exact amount on an issue', () => {
+    const balance = receipt(opening(), '5', '1').balance;
+    const result = balance.apply(
+      request({
+        kind: 'issue',
+        quantity: Quantity.fromString('1'),
+        unitCost: undefined,
+        exactAmount: Money.fromString('1', CURRENCY),
+      }),
+    );
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.code).toBe('INVENTORY.AMOUNT_OVERRIDE_NOT_ALLOWED');
+    }
+  });
+
+  it('rejects a negative exact amount', () => {
+    const result = opening().apply(
+      request({
+        exactAmount: Money.fromString('-1', CURRENCY),
+      }),
+    );
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.code).toBe('INVENTORY.INVALID_AMOUNT');
+    }
+  });
 });
 
 describe('Inventory: issues and the moving weighted average', () => {

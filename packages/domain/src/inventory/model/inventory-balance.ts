@@ -49,6 +49,12 @@ export interface StockMovementRequest {
   readonly quantity: Quantity;
   /** Required for receipts, ignored for issues. */
   readonly unitCost?: Money | undefined;
+  /**
+   * Receipts normally value at `unitCost × quantity`. A transfer moves the
+   * exact value issued from the source warehouse, so it supplies the amount
+   * instead; that keeps the total value of the two warehouses unchanged.
+   */
+  readonly exactAmount?: Money | undefined;
   readonly movementDate: string;
   readonly sourceType: StockSourceType;
   readonly sourceId: string;
@@ -143,6 +149,12 @@ export class InventoryBalance {
     if (reason !== null && reason.length > REASON_MAX_LENGTH) {
       return failWith('INVENTORY.INVALID_REASON', 'A reason is at most 200 characters');
     }
+    if (request.exactAmount !== undefined && request.kind !== 'receipt') {
+      return failWith(
+        'INVENTORY.AMOUNT_OVERRIDE_NOT_ALLOWED',
+        'Only a receipt can take an exact amount',
+      );
+    }
 
     const accounting =
       request.kind === 'receipt' ? this.accountReceipt(request) : this.accountIssue(request);
@@ -204,8 +216,20 @@ export class InventoryBalance {
         received: unitCost.currency,
       });
     }
+    const exactAmount = request.exactAmount;
+    if (exactAmount) {
+      if (exactAmount.isNegative()) {
+        return failWith('INVENTORY.INVALID_AMOUNT', 'The received amount cannot be negative');
+      }
+      if (exactAmount.currency !== this.props.totalValue.currency) {
+        return failWith('INVENTORY.CURRENCY_MISMATCH', 'The amount uses another currency', {
+          expected: this.props.totalValue.currency,
+          received: exactAmount.currency,
+        });
+      }
+    }
 
-    const amountDelta = unitCost.mulByQuantity(request.quantity);
+    const amountDelta = exactAmount ?? unitCost.mulByQuantity(request.quantity);
     return ok({
       quantityDelta: request.quantity,
       unitCost,
