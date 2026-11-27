@@ -4,6 +4,7 @@ import { AppShell } from './components/AppShell';
 import { DashboardPage } from './routes/DashboardPage';
 import { PartnersPage } from './routes/PartnersPage';
 import { WarehousesPage } from './routes/WarehousesPage';
+import { CatalogPage } from './routes/catalog/CatalogPage';
 
 const rootRoute = createRootRoute({ component: AppShell });
 
@@ -19,13 +20,19 @@ const warehousesRoute = createRoute({
   component: WarehousesPage,
 });
 
+const catalogRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/catalog',
+  component: CatalogPage,
+});
+
 const partnersRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/partners',
   component: PartnersPage,
 });
 
-const routeTree = rootRoute.addChildren([indexRoute, warehousesRoute, partnersRoute]);
+const routeTree = rootRoute.addChildren([indexRoute, warehousesRoute, catalogRoute, partnersRoute]);
 
 export const router = createRouter({ routeTree });
 

@@ -1,3 +1,6 @@
+export * from './catalog/categories.js';
+export * from './catalog/items.js';
+export * from './catalog/uoms.js';
 export * from './iam/user-view.js';
 export * from './iam/login.js';
 export * from './iam/session.js';

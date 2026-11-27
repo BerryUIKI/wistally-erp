@@ -5,13 +5,24 @@ import { AccessGuard } from './common/guards/access.guard.js';
 import { CsrfGuard } from './common/guards/csrf.guard.js';
 import { InfrastructureModule } from './infrastructure/infrastructure.module.js';
 import { AuthController } from './modules/auth/auth.controller.js';
+import { CategoriesController } from './modules/catalog/categories.controller.js';
+import { ItemsController } from './modules/catalog/items.controller.js';
+import { UomsController } from './modules/catalog/uoms.controller.js';
 import { HealthController } from './modules/health/health.controller.js';
 import { WarehousesController } from './modules/org/warehouses.controller.js';
 import { PartiesController } from './modules/party/parties.controller.js';
 
 @Module({
   imports: [InfrastructureModule],
-  controllers: [HealthController, AuthController, WarehousesController, PartiesController],
+  controllers: [
+    HealthController,
+    AuthController,
+    WarehousesController,
+    PartiesController,
+    CategoriesController,
+    UomsController,
+    ItemsController,
+  ],
   providers: [
     { provide: APP_GUARD, useClass: CsrfGuard },
     { provide: APP_GUARD, useClass: AccessGuard },
