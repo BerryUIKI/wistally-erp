@@ -14,6 +14,7 @@ function statusForDomainCode(code: string): number {
   if (code.startsWith('AUTH.')) return HttpStatus.FORBIDDEN;
   if (code.endsWith('_NOT_FOUND')) return HttpStatus.NOT_FOUND;
   if (code === 'INVENTORY.INSUFFICIENT_STOCK') return HttpStatus.CONFLICT;
+  if (code === 'ACCOUNTING.CHART_NOT_EMPTY') return HttpStatus.CONFLICT;
   if (code.includes('TAKEN') || code.includes('CONFLICT')) return HttpStatus.CONFLICT;
   return HttpStatus.UNPROCESSABLE_ENTITY;
 }

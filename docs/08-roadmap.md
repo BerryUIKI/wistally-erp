@@ -320,8 +320,8 @@ get used.
 | Milestone | Planned | Actual | Status |
 |---|---|---|---|
 | M0 Foundation | Week 2 | Week 2 | ✅ |
-| M1 Master data + stock | Week 5 | — | 🟡 all slices built, stocktakes/transfers in review |
-| M2 Accounting core | Week 8 | — | ⬜ |
+| M1 Master data + stock | Week 5 | — | ✅ |
+| M2 Accounting core | Week 8 | — | 🟡 chart of accounts |
 | M3 Purchasing | Week 10 | — | ⬜ |
 | M4 Sales | Week 12 | — | ⬜ |
 | M5 AR/AP + reports | Week 14 | — | ⬜ |

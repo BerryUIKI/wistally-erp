@@ -323,8 +323,11 @@ packages/db/src/seed/
 
 **Two chart-of-accounts templates**, chosen at install:
 
-- Small Business Accounting Standards (simplified, ~80 accounts)
-- Accounting Standards for Business Enterprises (full, ~150 accounts)
+- Small Business Accounting Standards (simplified, ~55 accounts)
+- Accounting Standards for Business Enterprises (trading subset, ~80 accounts)
+
+`db:seed` imports the small-business chart by default; set `SEED_CHART_TEMPLATE=enterprise` to start
+with the fuller one. The Accounting page also offers both templates when a company has no accounts.
 
 Templates are a starting point; users may add, edit, and remove. `account_mappings` must point at existing leaf
 accounts, validated at install time.

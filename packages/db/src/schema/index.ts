@@ -1,3 +1,4 @@
+export * from './accounting.js';
 export * from './catalog.js';
 export * from './common.js';
 export * from './iam.js';

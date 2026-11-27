@@ -7,8 +7,7 @@ Monorepo · trunk-based development · TypeScript end to end.
 
 ## Status
 
-**M1 — Master data and inventory.** The engineering scaffolding is in place and the vertical slice
-below works:
+**M2 — Accounting core.** The M1 foundation is complete and the vertical slice below works:
 
 - session authentication (httpOnly cookie, argon2id, CSRF double-submit)
 - three-layer permission model, function-level enforcement wired end to end
@@ -19,12 +18,13 @@ below works:
   weighted average, an append-only stock ledger, and a guard that keeps stock non-negative
 - posted stocktakes that turn counts into gains or losses, and warehouse transfers that move
   stock and value without changing the total
+- a chart of accounts with a tree, leaf-only posting, soft deletion and two importable templates
 - append-only audit log written inside the same transaction as the change
 - gapless document numbering service
 - in-database job queue with a scheduled maintenance job
 
-Business modules (purchasing, sales, inventory, accounting) are M2–M5; M1 (master data and
-inventory) is in progress. See [docs/08-roadmap.md](docs/08-roadmap.md).
+Business modules (purchasing, sales, accounting) are M2–M5; M1 (master data and inventory) is
+complete and M2 (accounting core) is in progress. See [docs/08-roadmap.md](docs/08-roadmap.md).
 
 ## Prerequisites
 
@@ -69,7 +69,7 @@ The Vite dev server proxies `/api` to `http://localhost:3000`, so cookies stay s
 | `pnpm depcruise` | Enforce module boundaries |
 | `pnpm db:generate` | Generate SQL from the Drizzle schema (review before committing) |
 | `pnpm db:migrate` | Apply pending migrations under an advisory lock |
-| `pnpm db:seed` | Create the demo company, roles, admin user and fiscal periods (idempotent) |
+| `pnpm db:seed` | Create the demo company, roles, admin user, fiscal periods and chart of accounts (idempotent) |
 | `pnpm db:seed-demo` | Load a demo catalog: 6 categories, 6 units and 100 items (idempotent) |
 
 ## Layout
