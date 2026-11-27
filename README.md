@@ -12,12 +12,13 @@ Monorepo · trunk-based development · TypeScript end to end.
 - session authentication (httpOnly cookie, argon2id, CSRF double-submit)
 - three-layer permission model, function-level enforcement wired end to end
 - company / warehouse / fiscal period organization data, tenant-scoped by `company_id`
+- customer and supplier master data sharing one record, with contacts, addresses and credit limits
 - append-only audit log written inside the same transaction as the change
 - gapless document numbering service
 - in-database job queue with a scheduled maintenance job
 
-Business modules (purchasing, sales, inventory, accounting) are M1–M5. See
-[docs/08-roadmap.md](docs/08-roadmap.md).
+Business modules (purchasing, sales, inventory, accounting) are M2–M5; M1 (master data and
+inventory) is in progress. See [docs/08-roadmap.md](docs/08-roadmap.md).
 
 ## Prerequisites
 

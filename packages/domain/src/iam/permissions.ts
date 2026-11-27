@@ -12,6 +12,9 @@ export const PERMISSIONS = [
   'org.department.create',
   'org.period.view',
   'org.period.close',
+  'party.partner.view',
+  'party.partner.create',
+  'party.partner.update',
   'platform.audit.view',
   'iam.user.view',
   'iam.user.manage',
@@ -49,6 +52,7 @@ export const ROLE_DEFINITIONS: readonly RoleDefinition[] = [
       'org.department.view',
       'org.period.view',
       'org.period.close',
+      'party.partner.view',
       'platform.audit.view',
       'accounting.journal.view',
       'accounting.journal.post',
@@ -63,6 +67,7 @@ export const ROLE_DEFINITIONS: readonly RoleDefinition[] = [
     name: 'Buyer',
     permissions: [
       'org.warehouse.view',
+      'party.partner.view',
       'purchasing.order.view',
       'purchasing.order.create',
       'purchasing.invoice.post',
@@ -74,6 +79,7 @@ export const ROLE_DEFINITIONS: readonly RoleDefinition[] = [
     name: 'Sales',
     permissions: [
       'org.warehouse.view',
+      'party.partner.view',
       'sales.order.view',
       'sales.order.create',
       'sales.invoice.post',
@@ -83,6 +89,6 @@ export const ROLE_DEFINITIONS: readonly RoleDefinition[] = [
   {
     code: 'warehouse',
     name: 'Warehouse clerk',
-    permissions: ['org.warehouse.view', 'inventory.balance.view'],
+    permissions: ['org.warehouse.view', 'party.partner.view', 'inventory.balance.view'],
   },
 ];

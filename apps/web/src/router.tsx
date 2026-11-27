@@ -2,6 +2,7 @@ import { createRootRoute, createRoute, createRouter } from '@tanstack/react-rout
 
 import { AppShell } from './components/AppShell';
 import { DashboardPage } from './routes/DashboardPage';
+import { PartnersPage } from './routes/PartnersPage';
 import { WarehousesPage } from './routes/WarehousesPage';
 
 const rootRoute = createRootRoute({ component: AppShell });
@@ -18,7 +19,13 @@ const warehousesRoute = createRoute({
   component: WarehousesPage,
 });
 
-const routeTree = rootRoute.addChildren([indexRoute, warehousesRoute]);
+const partnersRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/partners',
+  component: PartnersPage,
+});
+
+const routeTree = rootRoute.addChildren([indexRoute, warehousesRoute, partnersRoute]);
 
 export const router = createRouter({ routeTree });
 
