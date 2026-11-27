@@ -7,10 +7,11 @@ import { InfrastructureModule } from './infrastructure/infrastructure.module.js'
 import { AuthController } from './modules/auth/auth.controller.js';
 import { HealthController } from './modules/health/health.controller.js';
 import { WarehousesController } from './modules/org/warehouses.controller.js';
+import { PartiesController } from './modules/party/parties.controller.js';
 
 @Module({
   imports: [InfrastructureModule],
-  controllers: [HealthController, AuthController, WarehousesController],
+  controllers: [HealthController, AuthController, WarehousesController, PartiesController],
   providers: [
     { provide: APP_GUARD, useClass: CsrfGuard },
     { provide: APP_GUARD, useClass: AccessGuard },

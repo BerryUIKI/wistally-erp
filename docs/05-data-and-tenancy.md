@@ -198,7 +198,8 @@ version       int NOT NULL DEFAULT 1
 
 | Table type | Policy |
 |---|---|
-| Master data (items, parties, accounts) | Soft delete via `deleted_at datetime(3)`; filtered by default; uniqueness via a generated column included in the unique index (MySQL has no partial indexes) |
+| Parties | Deactivated with `is_active = false`; never hard-deleted, so historical documents keep rendering |
+| Master data (items, accounts) | Soft delete via `deleted_at datetime(3)`; filtered by default; uniqueness via a generated column included in the unique index (MySQL has no partial indexes) |
 | Business documents | Never deleted. Voiding is a state, not a deletion |
 | Stock transactions, journal entries | Never deleted. Corrections are new reversing rows |
 | Users, roles | Soft delete (`is_active = false`) because audit logs reference them |

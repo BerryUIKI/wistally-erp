@@ -319,8 +319,8 @@ get used.
 
 | Milestone | Planned | Actual | Status |
 |---|---|---|---|
-| M0 Foundation | Week 2 | — | ⬜ |
-| M1 Master data + stock | Week 5 | — | ⬜ |
+| M0 Foundation | Week 2 | Week 2 | ✅ |
+| M1 Master data + stock | Week 5 | — | 🟡 party context merged |
 | M2 Accounting core | Week 8 | — | ⬜ |
 | M3 Purchasing | Week 10 | — | ⬜ |
 | M4 Sales | Week 12 | — | ⬜ |

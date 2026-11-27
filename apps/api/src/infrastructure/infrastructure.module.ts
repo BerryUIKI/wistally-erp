@@ -1,16 +1,23 @@
 import { Global, Module } from '@nestjs/common';
 import {
   AuthenticateUseCase,
+  CreatePartyUseCase,
   CreateWarehouseUseCase,
+  GetPartyUseCase,
+  ListPartiesUseCase,
   ListWarehousesUseCase,
   LoginUseCase,
   LogoutUseCase,
+  SetPartyActiveUseCase,
+  UpdatePartyUseCase,
 } from '@wistally/application';
 import {
   type Database,
   type DatabaseHandle,
   DrizzleAuditLogRepository,
+  DrizzleCompanyRepository,
   DrizzleDocumentSequenceRepository,
+  DrizzlePartyRepository,
   DrizzleSessionRepository,
   DrizzleUnitOfWork,
   DrizzleUserRepository,
@@ -19,6 +26,8 @@ import {
 } from '@wistally/db';
 import type {
   AuditLogRepository,
+  CompanyRepository,
+  PartyRepository,
   PasswordHasher,
   SessionRepository,
   TokenGenerator,
@@ -81,6 +90,14 @@ import { CryptoTokenGenerator } from './token-generator.js';
     {
       provide: TOKENS.WAREHOUSE_REPOSITORY,
       useFactory: (): WarehouseRepository => new DrizzleWarehouseRepository(),
+    },
+    {
+      provide: TOKENS.COMPANY_REPOSITORY,
+      useFactory: (): CompanyRepository => new DrizzleCompanyRepository(),
+    },
+    {
+      provide: TOKENS.PARTY_REPOSITORY,
+      useFactory: (): PartyRepository => new DrizzlePartyRepository(),
     },
     {
       provide: TOKENS.AUDIT_REPOSITORY,
@@ -157,6 +174,70 @@ import { CryptoTokenGenerator } from './token-generator.js';
         new ListWarehousesUseCase(uow, warehouses),
       inject: [TOKENS.UNIT_OF_WORK, TOKENS.WAREHOUSE_REPOSITORY],
     },
+    {
+      provide: CreatePartyUseCase,
+      useFactory: (
+        uow: UnitOfWork,
+        parties: PartyRepository,
+        companies: CompanyRepository,
+        audit: AuditLogRepository,
+        clock: Clock,
+        ids: IdGenerator,
+      ) => new CreatePartyUseCase(uow, parties, companies, audit, clock, ids),
+      inject: [
+        TOKENS.UNIT_OF_WORK,
+        TOKENS.PARTY_REPOSITORY,
+        TOKENS.COMPANY_REPOSITORY,
+        TOKENS.AUDIT_REPOSITORY,
+        TOKENS.CLOCK,
+        TOKENS.IDS,
+      ],
+    },
+    {
+      provide: UpdatePartyUseCase,
+      useFactory: (
+        uow: UnitOfWork,
+        parties: PartyRepository,
+        audit: AuditLogRepository,
+        clock: Clock,
+        ids: IdGenerator,
+      ) => new UpdatePartyUseCase(uow, parties, audit, clock, ids),
+      inject: [
+        TOKENS.UNIT_OF_WORK,
+        TOKENS.PARTY_REPOSITORY,
+        TOKENS.AUDIT_REPOSITORY,
+        TOKENS.CLOCK,
+        TOKENS.IDS,
+      ],
+    },
+    {
+      provide: SetPartyActiveUseCase,
+      useFactory: (
+        uow: UnitOfWork,
+        parties: PartyRepository,
+        audit: AuditLogRepository,
+        clock: Clock,
+        ids: IdGenerator,
+      ) => new SetPartyActiveUseCase(uow, parties, audit, clock, ids),
+      inject: [
+        TOKENS.UNIT_OF_WORK,
+        TOKENS.PARTY_REPOSITORY,
+        TOKENS.AUDIT_REPOSITORY,
+        TOKENS.CLOCK,
+        TOKENS.IDS,
+      ],
+    },
+    {
+      provide: GetPartyUseCase,
+      useFactory: (uow: UnitOfWork, parties: PartyRepository) => new GetPartyUseCase(uow, parties),
+      inject: [TOKENS.UNIT_OF_WORK, TOKENS.PARTY_REPOSITORY],
+    },
+    {
+      provide: ListPartiesUseCase,
+      useFactory: (uow: UnitOfWork, parties: PartyRepository) =>
+        new ListPartiesUseCase(uow, parties),
+      inject: [TOKENS.UNIT_OF_WORK, TOKENS.PARTY_REPOSITORY],
+    },
   ],
   exports: [
     CONFIG,
@@ -170,7 +251,9 @@ import { CryptoTokenGenerator } from './token-generator.js';
     TOKENS.PASSWORD_HASHER,
     TOKENS.USER_REPOSITORY,
     TOKENS.SESSION_REPOSITORY,
+    TOKENS.COMPANY_REPOSITORY,
     TOKENS.WAREHOUSE_REPOSITORY,
+    TOKENS.PARTY_REPOSITORY,
     TOKENS.AUDIT_REPOSITORY,
     TOKENS.SEQUENCE_REPOSITORY,
     LoginUseCase,
@@ -178,6 +261,11 @@ import { CryptoTokenGenerator } from './token-generator.js';
     LogoutUseCase,
     CreateWarehouseUseCase,
     ListWarehousesUseCase,
+    CreatePartyUseCase,
+    UpdatePartyUseCase,
+    SetPartyActiveUseCase,
+    GetPartyUseCase,
+    ListPartiesUseCase,
   ],
 })
 export class InfrastructureModule {}

@@ -1,9 +1,10 @@
-import { Body, Controller, Get, HttpException, Inject, Post, Req } from '@nestjs/common';
+import { Body, Controller, Get, Inject, Post, Req } from '@nestjs/common';
 import { CreateWarehouseUseCase, ListWarehousesUseCase } from '@wistally/application';
 import { createWarehouseRequestSchema } from '@wistally/contracts';
 
 import { RequirePermissions } from '../../common/decorators.js';
 import type { AuthedRequest } from '../../common/request.js';
+import { requireUser } from '../../common/require-user.js';
 
 @Controller('org/warehouses')
 export class WarehousesController {
@@ -38,11 +39,4 @@ export class WarehousesController {
 
     return { data: result.value, meta: { traceId: request.id } };
   }
-}
-
-function requireUser(request: AuthedRequest) {
-  if (!request.user) {
-    throw new HttpException({ code: 'AUTH.UNAUTHENTICATED', message: 'Not signed in' }, 401);
-  }
-  return request.user;
 }
