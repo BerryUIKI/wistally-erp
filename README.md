@@ -19,6 +19,8 @@ Monorepo · trunk-based development · TypeScript end to end.
 - posted stocktakes that turn counts into gains or losses, and warehouse transfers that move
   stock and value without changing the total
 - a chart of accounts with a tree, leaf-only posting, soft deletion and two importable templates
+- manual journal entries with draft, approve, post and reverse; exact debit-credit balance,
+  gapless document numbers, and an append-only ledger behind every posting
 - append-only audit log written inside the same transaction as the change
 - gapless document numbering service
 - in-database job queue with a scheduled maintenance job
