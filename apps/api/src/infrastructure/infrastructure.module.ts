@@ -2,14 +2,18 @@ import { Global, Module } from '@nestjs/common';
 import {
   AddUomConversionUseCase,
   AuthenticateUseCase,
+  CreateAccountUseCase,
   CreateCategoryUseCase,
   CreateItemUseCase,
   CreatePartyUseCase,
   CreateUomUseCase,
   CreateWarehouseUseCase,
+  DeleteAccountUseCase,
   DeleteUomConversionUseCase,
   GetItemUseCase,
   GetPartyUseCase,
+  ImportChartUseCase,
+  ListAccountsUseCase,
   ListCategoriesUseCase,
   ListInventoryBalancesUseCase,
   ListItemsUseCase,
@@ -24,6 +28,7 @@ import {
   PostStockMovementUseCase,
   PostStockTransferUseCase,
   PostStocktakeUseCase,
+  RenameAccountUseCase,
   SetItemActiveUseCase,
   SetPartyActiveUseCase,
   UpdateCategoryUseCase,
@@ -34,6 +39,7 @@ import {
 import {
   type Database,
   type DatabaseHandle,
+  DrizzleAccountRepository,
   DrizzleAuditLogRepository,
   DrizzleCatalogRepository,
   DrizzleCompanyRepository,
@@ -50,6 +56,7 @@ import {
   createDatabase,
 } from '@wistally/db';
 import type {
+  AccountRepository,
   AuditLogRepository,
   CatalogRepository,
   CompanyRepository,
@@ -149,6 +156,14 @@ import { CryptoTokenGenerator } from './token-generator.js';
     {
       provide: TOKENS.STOCK_TRANSFER_REPOSITORY,
       useFactory: (): StockTransferRepository => new DrizzleStockTransferRepository(),
+    },
+    {
+      provide: TOKENS.ACCOUNT_REPOSITORY,
+      useFactory: (): AccountRepository => new DrizzleAccountRepository(),
+    },
+    {
+      provide: TOKENS.ACCOUNT_REPOSITORY,
+      useFactory: (): AccountRepository => new DrizzleAccountRepository(),
     },
     {
       provide: TOKENS.AUDIT_REPOSITORY,
@@ -606,6 +621,80 @@ import { CryptoTokenGenerator } from './token-generator.js';
         TOKENS.IDS,
       ],
     },
+    {
+      provide: ListAccountsUseCase,
+      useFactory: (uow: UnitOfWork, accounts: AccountRepository) =>
+        new ListAccountsUseCase(uow, accounts),
+      inject: [TOKENS.UNIT_OF_WORK, TOKENS.ACCOUNT_REPOSITORY],
+    },
+    {
+      provide: CreateAccountUseCase,
+      useFactory: (
+        uow: UnitOfWork,
+        accounts: AccountRepository,
+        audit: AuditLogRepository,
+        clock: Clock,
+        ids: IdGenerator,
+      ) => new CreateAccountUseCase(uow, accounts, audit, clock, ids),
+      inject: [
+        TOKENS.UNIT_OF_WORK,
+        TOKENS.ACCOUNT_REPOSITORY,
+        TOKENS.AUDIT_REPOSITORY,
+        TOKENS.CLOCK,
+        TOKENS.IDS,
+      ],
+    },
+    {
+      provide: RenameAccountUseCase,
+      useFactory: (
+        uow: UnitOfWork,
+        accounts: AccountRepository,
+        audit: AuditLogRepository,
+        clock: Clock,
+        ids: IdGenerator,
+      ) => new RenameAccountUseCase(uow, accounts, audit, clock, ids),
+      inject: [
+        TOKENS.UNIT_OF_WORK,
+        TOKENS.ACCOUNT_REPOSITORY,
+        TOKENS.AUDIT_REPOSITORY,
+        TOKENS.CLOCK,
+        TOKENS.IDS,
+      ],
+    },
+    {
+      provide: DeleteAccountUseCase,
+      useFactory: (
+        uow: UnitOfWork,
+        accounts: AccountRepository,
+        audit: AuditLogRepository,
+        clock: Clock,
+        ids: IdGenerator,
+      ) => new DeleteAccountUseCase(uow, accounts, audit, clock, ids),
+      inject: [
+        TOKENS.UNIT_OF_WORK,
+        TOKENS.ACCOUNT_REPOSITORY,
+        TOKENS.AUDIT_REPOSITORY,
+        TOKENS.CLOCK,
+        TOKENS.IDS,
+      ],
+    },
+    {
+      provide: ImportChartUseCase,
+      useFactory: (
+        uow: UnitOfWork,
+        accounts: AccountRepository,
+        audit: AuditLogRepository,
+        clock: Clock,
+        ids: IdGenerator,
+      ) => new ImportChartUseCase(uow, accounts, audit, clock, ids),
+      inject: [
+        TOKENS.UNIT_OF_WORK,
+        TOKENS.ACCOUNT_REPOSITORY,
+        TOKENS.AUDIT_REPOSITORY,
+        TOKENS.CLOCK,
+        TOKENS.IDS,
+      ],
+    },
   ],
   exports: [
     CONFIG,
@@ -627,6 +716,7 @@ import { CryptoTokenGenerator } from './token-generator.js';
     TOKENS.INVENTORY_REPOSITORY,
     TOKENS.STOCKTAKE_REPOSITORY,
     TOKENS.STOCK_TRANSFER_REPOSITORY,
+    TOKENS.ACCOUNT_REPOSITORY,
     TOKENS.AUDIT_REPOSITORY,
     TOKENS.SEQUENCE_REPOSITORY,
     LoginUseCase,
@@ -659,6 +749,11 @@ import { CryptoTokenGenerator } from './token-generator.js';
     PostStocktakeUseCase,
     ListStockTransfersUseCase,
     PostStockTransferUseCase,
+    ListAccountsUseCase,
+    CreateAccountUseCase,
+    RenameAccountUseCase,
+    DeleteAccountUseCase,
+    ImportChartUseCase,
   ],
 })
 export class InfrastructureModule {}

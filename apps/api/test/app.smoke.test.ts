@@ -78,6 +78,13 @@ describe('API smoke', () => {
     expect(body.error.code).toBe('AUTH.UNAUTHENTICATED');
   });
 
+  it('guards the accounting routes behind a session', async () => {
+    const response = await app.inject({ method: 'GET', url: '/api/v1/accounting/accounts' });
+    expect(response.statusCode).toBe(401);
+    const body = response.json() as { error: { code: string } };
+    expect(body.error.code).toBe('AUTH.UNAUTHENTICATED');
+  });
+
   it('blocks a state-changing request without a CSRF header', async () => {
     const response = await app.inject({
       method: 'POST',

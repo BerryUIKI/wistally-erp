@@ -1,5 +1,5 @@
 import { hash } from '@node-rs/argon2';
-import { ROLE_DEFINITIONS } from '@wistally/domain';
+import { type ChartTemplateId, ROLE_DEFINITIONS } from '@wistally/domain';
 import { uuidv7 } from '@wistally/kernel';
 import { eq } from 'drizzle-orm';
 
@@ -7,6 +7,7 @@ import { createDatabase } from './client.js';
 import { companies, currencies } from './schema/common.js';
 import { rolePermissions, roles, userRoles, users } from './schema/iam.js';
 import { fiscalPeriods, warehouses } from './schema/org.js';
+import { seedChartOfAccounts } from './seed-chart.js';
 
 export interface SeedOptions {
   readonly connectionString: string;
@@ -14,12 +15,15 @@ export interface SeedOptions {
   readonly adminPassword: string;
   readonly companyCode: string;
   readonly companyName: string;
+  /** Starting chart; defaults to the small-business template. */
+  readonly chartTemplate?: ChartTemplateId;
 }
 
 export interface SeedResult {
   readonly companyId: string;
   readonly companyCode: string;
   readonly adminEmail: string;
+  readonly accountsCreated: number;
   readonly created: boolean;
 }
 
@@ -57,6 +61,7 @@ export async function seedDatabase(options: SeedOptions): Promise<SeedResult> {
         companyId: existing[0]?.id ?? '',
         companyCode: options.companyCode,
         adminEmail: options.adminEmail,
+        accountsCreated: 0,
         created: false,
       };
     }
@@ -142,10 +147,18 @@ export async function seedDatabase(options: SeedOptions): Promise<SeedResult> {
       updatedBy: adminId,
     });
 
+    const accountsCreated = await seedChartOfAccounts(db, {
+      companyId,
+      actorId: adminId,
+      template: options.chartTemplate ?? 'small_business',
+      now,
+    });
+
     return {
       companyId,
       companyCode: options.companyCode,
       adminEmail: options.adminEmail,
+      accountsCreated,
       created: true,
     };
   } finally {
