@@ -24,6 +24,7 @@ export interface SeedResult {
   readonly companyCode: string;
   readonly adminEmail: string;
   readonly accountsCreated: number;
+  readonly mappingsCreated: number;
   readonly created: boolean;
 }
 
@@ -62,6 +63,7 @@ export async function seedDatabase(options: SeedOptions): Promise<SeedResult> {
         companyCode: options.companyCode,
         adminEmail: options.adminEmail,
         accountsCreated: 0,
+        mappingsCreated: 0,
         created: false,
       };
     }
@@ -147,7 +149,7 @@ export async function seedDatabase(options: SeedOptions): Promise<SeedResult> {
       updatedBy: adminId,
     });
 
-    const accountsCreated = await seedChartOfAccounts(db, {
+    const chart = await seedChartOfAccounts(db, {
       companyId,
       actorId: adminId,
       template: options.chartTemplate ?? 'small_business',
@@ -158,7 +160,8 @@ export async function seedDatabase(options: SeedOptions): Promise<SeedResult> {
       companyId,
       companyCode: options.companyCode,
       adminEmail: options.adminEmail,
-      accountsCreated,
+      accountsCreated: chart.accountsCreated,
+      mappingsCreated: chart.mappingsCreated,
       created: true,
     };
   } finally {

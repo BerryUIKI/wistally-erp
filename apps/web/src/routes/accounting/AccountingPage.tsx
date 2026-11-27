@@ -3,10 +3,12 @@ import { useState } from 'react';
 import { useAuth } from '../../lib/auth';
 import { ChartOfAccountsTab } from './ChartOfAccountsTab';
 import { JournalEntriesTab } from './JournalEntriesTab';
+import { MappingsTab } from './MappingsTab';
 
 const TABS = [
   { id: 'chart', label: 'Chart of accounts', permission: 'accounting.account.view' },
   { id: 'journals', label: 'Journal entries', permission: 'accounting.journal.view' },
+  { id: 'mappings', label: 'Mappings', permission: 'accounting.account.view' },
 ] as const;
 
 type TabId = (typeof TABS)[number]['id'];
@@ -47,6 +49,7 @@ export function AccountingPage() {
 
       {current === 'chart' ? <ChartOfAccountsTab /> : null}
       {current === 'journals' ? <JournalEntriesTab /> : null}
+      {current === 'mappings' ? <MappingsTab /> : null}
     </div>
   );
 }

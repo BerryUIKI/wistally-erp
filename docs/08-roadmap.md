@@ -321,7 +321,7 @@ get used.
 |---|---|---|---|
 | M0 Foundation | Week 2 | Week 2 | ✅ |
 | M1 Master data + stock | Week 5 | — | ✅ |
-| M2 Accounting core | Week 8 | — | 🟡 chart of accounts, journal entries |
+| M2 Accounting core | Week 8 | — | 🟡 chart of accounts, journal entries, posting engine |
 | M3 Purchasing | Week 10 | — | ⬜ |
 | M4 Sales | Week 12 | — | ⬜ |
 | M5 AR/AP + reports | Week 14 | — | ⬜ |

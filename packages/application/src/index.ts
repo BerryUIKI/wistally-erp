@@ -1,5 +1,7 @@
 export * from './accounting/accounts.js';
 export * from './accounting/journals.js';
+export * from './accounting/mappings.js';
+export * from './accounting/posting.js';
 export * from './catalog/categories.js';
 export * from './catalog/items.js';
 export * from './catalog/uoms.js';

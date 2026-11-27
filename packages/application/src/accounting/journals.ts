@@ -26,13 +26,13 @@ import { JournalEntry as JournalEntryModel } from '@wistally/domain';
 import type { Clock, IdGenerator, Result, Tx, UnitOfWork } from '@wistally/kernel';
 import { Money, businessDate, fail, failWith, ok } from '@wistally/kernel';
 
-interface AccountIndex {
+export interface AccountIndex {
   readonly byId: Map<string, Account>;
   /** Ids of accounts that have live children; those are headers. */
   readonly parents: Set<string>;
 }
 
-async function loadAccounts(
+export async function loadAccounts(
   tx: Tx,
   accounts: AccountRepository,
   companyId: string,
@@ -49,7 +49,7 @@ async function loadAccounts(
   return { byId, parents };
 }
 
-function validatePostable(
+export function validatePostable(
   index: AccountIndex,
   lines: readonly { readonly accountId: string }[],
 ): Result<void> {
@@ -95,7 +95,7 @@ function buildLineInputs(
   return ok(built);
 }
 
-async function requireOpenPeriod(
+export async function requireOpenPeriod(
   tx: Tx,
   periods: PeriodRepository,
   companyId: string,
@@ -114,11 +114,11 @@ async function requireOpenPeriod(
   return ok(period);
 }
 
-function periodKeyOf(entryDate: string): string {
+export function periodKeyOf(entryDate: string): string {
   return entryDate.slice(0, 7).replace('-', '');
 }
 
-function ledgerEntriesFor(
+export function ledgerEntriesFor(
   entry: JournalEntry,
   periodId: string,
   actorId: string,
@@ -146,7 +146,7 @@ function ledgerEntriesFor(
   }));
 }
 
-function auditSnapshot(entry: JournalEntry): Record<string, unknown> {
+export function auditSnapshot(entry: JournalEntry): Record<string, unknown> {
   const props = entry.snapshot;
   return {
     docNo: props.docNo,
@@ -182,6 +182,9 @@ export function toJournalEntryView(row: JournalEntryListRow): JournalEntryView {
     memo: props.memo,
     status: props.status,
     reversalOfId: props.reversalOfId,
+    sourceType: props.sourceType,
+    sourceId: props.sourceId,
+    sourceEvent: props.sourceEvent,
     lines: row.lines.map(({ line, accountCode, accountName }) => ({
       id: line.id,
       lineNo: line.lineNo,
@@ -203,7 +206,7 @@ export function toJournalEntryView(row: JournalEntryListRow): JournalEntryView {
   };
 }
 
-async function loadedRow(
+export async function loadedRow(
   tx: Tx,
   journals: JournalEntryRepository,
   companyId: string,

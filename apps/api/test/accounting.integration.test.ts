@@ -11,8 +11,10 @@ import {
 import type { AccountView } from '@wistally/contracts';
 import {
   type DatabaseHandle,
+  DrizzleAccountMappingRepository,
   DrizzleAccountRepository,
   DrizzleAuditLogRepository,
+  DrizzleJournalEntryRepository,
   DrizzleUnitOfWork,
   createDatabase,
 } from '@wistally/db';
@@ -40,15 +42,32 @@ describeIfDatabase('chart of accounts use cases', () => {
     handle = createDatabase(DATABASE_URL as string, 4);
     const unitOfWork = new DrizzleUnitOfWork(handle.db);
     const accounts = new DrizzleAccountRepository();
+    const mappingRepository = new DrizzleAccountMappingRepository();
+    const journalRepository = new DrizzleJournalEntryRepository();
     const audit = new DrizzleAuditLogRepository();
     const clock = new FixedClock(new Date('2026-11-27T02:00:00.000Z'));
     const ids = new UuidV7Generator();
 
     createAccount = new CreateAccountUseCase(unitOfWork, accounts, audit, clock, ids);
     renameAccount = new RenameAccountUseCase(unitOfWork, accounts, audit, clock, ids);
-    deleteAccount = new DeleteAccountUseCase(unitOfWork, accounts, audit, clock, ids);
+    deleteAccount = new DeleteAccountUseCase(
+      unitOfWork,
+      accounts,
+      mappingRepository,
+      journalRepository,
+      audit,
+      clock,
+      ids,
+    );
     listAccounts = new ListAccountsUseCase(unitOfWork, accounts);
-    importChart = new ImportChartUseCase(unitOfWork, accounts, audit, clock, ids);
+    importChart = new ImportChartUseCase(
+      unitOfWork,
+      accounts,
+      mappingRepository,
+      audit,
+      clock,
+      ids,
+    );
 
     const [rows] = await handle.pool.query<RowDataPacket[]>(
       'select id from companies order by created_at asc limit 1',
@@ -74,6 +93,9 @@ describeIfDatabase('chart of accounts use cases', () => {
       companyId,
     ]);
     if (importCompanyId) {
+      await handle.pool.query('delete from account_mappings where company_id = ?', [
+        importCompanyId,
+      ]);
       await handle.pool.query(
         'delete from accounts where company_id = ? and parent_id is not null',
         [importCompanyId],

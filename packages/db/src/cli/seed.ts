@@ -28,6 +28,7 @@ if (result.created) {
   console.log(`     company : ${result.companyCode} (${result.companyId})`);
   console.log(`     admin   : ${result.adminEmail}`);
   console.log(`     accounts: ${result.accountsCreated} created (${chartTemplate})`);
+  console.log(`     mappings: ${result.mappingsCreated} created`);
 } else {
   console.log('[db] company already present, nothing to do');
 }

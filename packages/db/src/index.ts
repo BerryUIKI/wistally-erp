@@ -4,6 +4,7 @@ export * from './migrations.js';
 export * from './seed.js';
 export * from './seed-chart.js';
 export * from './seed-demo.js';
+export * from './repositories/account-mapping.repository.js';
 export * from './repositories/account.repository.js';
 export * from './repositories/audit-log.repository.js';
 export * from './repositories/catalog.repository.js';

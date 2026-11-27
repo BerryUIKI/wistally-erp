@@ -1,12 +1,18 @@
 import type { ChartTemplateId } from '@wistally/domain';
-import { Account, CHART_TEMPLATES } from '@wistally/domain';
+import { Account, CHART_TEMPLATES, DEFAULT_ACCOUNT_MAPPING_CODES } from '@wistally/domain';
 import { uuidv7 } from '@wistally/kernel';
 
 import type { Database } from './client.js';
-import { accounts } from './schema/accounting.js';
+import { accountMappings, accounts } from './schema/accounting.js';
+
+export interface SeededChart {
+  readonly accountsCreated: number;
+  readonly mappingsCreated: number;
+}
 
 /**
- * Inserts one of the starting charts into a company that has none.
+ * Inserts one of the starting charts into a company that has none, together
+ * with the default account mappings for the posting rules.
  *
  * The seed is the install step, so a fresh company gets a usable chart without
  * a second manual import. Template entries list parents before children, and
@@ -20,7 +26,7 @@ export async function seedChartOfAccounts(
     readonly template: ChartTemplateId;
     readonly now: Date;
   },
-): Promise<number> {
+): Promise<SeededChart> {
   const template = CHART_TEMPLATES[input.template];
   const byCode = new Map<string, Account>();
 
@@ -63,5 +69,28 @@ export async function seedChartOfAccounts(
     }),
   );
 
-  return byCode.size;
+  const mappingRows = Object.entries(DEFAULT_ACCOUNT_MAPPING_CODES).flatMap(([key, code]) => {
+    const account = byCode.get(code);
+    if (!account) {
+      return [];
+    }
+    return [
+      {
+        id: uuidv7(),
+        companyId: input.companyId,
+        mappingKey: key,
+        accountId: account.snapshot.id,
+        createdAt: input.now,
+        createdBy: input.actorId,
+        updatedAt: input.now,
+        updatedBy: input.actorId,
+        version: 1,
+      },
+    ];
+  });
+  if (mappingRows.length > 0) {
+    await db.insert(accountMappings).values(mappingRows);
+  }
+
+  return { accountsCreated: byCode.size, mappingsCreated: mappingRows.length };
 }

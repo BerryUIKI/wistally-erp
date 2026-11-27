@@ -6,8 +6,21 @@ import type {
   ImportChartResponse,
   RenameAccountRequest,
 } from '@wistally/contracts';
-import type { Account, AccountRepository, AuditLogRepository } from '@wistally/domain';
-import { Account as AccountModel, CHART_TEMPLATES } from '@wistally/domain';
+import type {
+  Account,
+  AccountMapping,
+  AccountMappingRepository,
+  AccountRepository,
+  AuditLogRepository,
+  JournalEntryRepository,
+} from '@wistally/domain';
+import {
+  ACCOUNT_MAPPING_DEFINITIONS,
+  AccountMapping as AccountMappingModel,
+  Account as AccountModel,
+  CHART_TEMPLATES,
+  DEFAULT_ACCOUNT_MAPPING_CODES,
+} from '@wistally/domain';
 import type { Clock, IdGenerator, Result, UnitOfWork } from '@wistally/kernel';
 import { fail, failWith, ok } from '@wistally/kernel';
 
@@ -185,6 +198,8 @@ export class DeleteAccountUseCase {
   constructor(
     private readonly uow: UnitOfWork,
     private readonly accounts: AccountRepository,
+    private readonly mappings: AccountMappingRepository,
+    private readonly journals: JournalEntryRepository,
     private readonly audit: AuditLogRepository,
     private readonly clock: Clock,
     private readonly ids: IdGenerator,
@@ -210,6 +225,24 @@ export class DeleteAccountUseCase {
           'ACCOUNTING.ACCOUNT_HAS_CHILDREN',
           'Delete the child accounts first',
           { children },
+        );
+      }
+
+      const mappingCount = await this.mappings.countForAccount(
+        tx,
+        input.companyId,
+        input.accountId,
+      );
+      const lineCount = await this.journals.countLinesForAccount(
+        tx,
+        input.companyId,
+        input.accountId,
+      );
+      if (mappingCount > 0 || lineCount > 0) {
+        return failWith<DeleteAccountResponse>(
+          'ACCOUNTING.ACCOUNT_IN_USE',
+          'This account is used by mappings or journal entries',
+          { mappings: mappingCount, journalLines: lineCount },
         );
       }
 
@@ -268,6 +301,7 @@ export class ImportChartUseCase {
   constructor(
     private readonly uow: UnitOfWork,
     private readonly accounts: AccountRepository,
+    private readonly mappings: AccountMappingRepository,
     private readonly audit: AuditLogRepository,
     private readonly clock: Clock,
     private readonly ids: IdGenerator,
@@ -313,6 +347,29 @@ export class ImportChartUseCase {
       }
 
       await this.accounts.insertMany(tx, [...byCode.values()]);
+
+      const mappingRows: AccountMapping[] = [];
+      for (const definition of ACCOUNT_MAPPING_DEFINITIONS) {
+        const code = DEFAULT_ACCOUNT_MAPPING_CODES[definition.key];
+        const account = byCode.get(code);
+        if (!account) {
+          continue;
+        }
+        const created = AccountMappingModel.create({
+          id: this.ids.next(),
+          companyId: input.companyId,
+          key: definition.key,
+          accountId: account.snapshot.id,
+          actorId: input.actorId,
+          now,
+        });
+        if (!created.ok) {
+          return fail(created.error);
+        }
+        mappingRows.push(created.value);
+      }
+      await this.mappings.insertMany(tx, mappingRows);
+
       await this.audit.append(tx, {
         id: this.ids.next(),
         companyId: input.companyId,
