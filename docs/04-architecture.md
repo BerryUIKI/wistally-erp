@@ -139,6 +139,12 @@ transaction is. It guarantees the invariants of a single aggregate. Coordinating
 and committing transactions, is the application layer's job. This keeps the domain model fully testable
 without a database.
 
+**A failed `Result` rolls the transaction back.** A naive unit of work commits whatever the callback wrote
+before it returned `Result.fail`. The Drizzle implementation detects the failed `Result` inside the
+transaction, rolls back, and returns the same failure to the caller. A document that fails halfway — one line
+applied, the next short of stock — therefore leaves nothing behind, and the example above can return a
+business failure after writing without leaking partial work.
+
 **Why journal entries are not generated asynchronously**: see
 [02 §5](02-domain-model.md#5-module-collaboration-rules). In short — posting must be atomic.
 

@@ -10,6 +10,7 @@ import { ItemsController } from './modules/catalog/items.controller.js';
 import { UomsController } from './modules/catalog/uoms.controller.js';
 import { HealthController } from './modules/health/health.controller.js';
 import { InventoryController } from './modules/inventory/inventory.controller.js';
+import { StockDocumentsController } from './modules/inventory/stock-documents.controller.js';
 import { WarehousesController } from './modules/org/warehouses.controller.js';
 import { PartiesController } from './modules/party/parties.controller.js';
 
@@ -24,6 +25,7 @@ import { PartiesController } from './modules/party/parties.controller.js';
     UomsController,
     ItemsController,
     InventoryController,
+    StockDocumentsController,
   ],
   providers: [
     { provide: APP_GUARD, useClass: CsrfGuard },

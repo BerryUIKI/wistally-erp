@@ -116,3 +116,134 @@ export const listStockTransactionsQuerySchema = z.object({
 });
 
 export type ListStockTransactionsQuery = z.infer<typeof listStockTransactionsQuerySchema>;
+
+// —— Stocktakes ——————————————————————————————————————————————
+
+/** A physical count may be zero, unlike a movement quantity. */
+const countedQuantity = z
+  .string()
+  .trim()
+  .regex(/^\d{1,13}(?:\.\d{1,6})?$/, 'Use a quantity with up to six decimals');
+
+const note = z.string().trim().max(200, 'A note is at most 200 characters');
+
+export const stocktakeLineRequestSchema = z.object({
+  itemId: z.string().uuid(),
+  countedQuantity,
+});
+
+export type StocktakeLineRequest = z.infer<typeof stocktakeLineRequestSchema>;
+
+export const postStocktakeRequestSchema = z.object({
+  warehouseId: z.string().uuid(),
+  movementDate: movementDate.optional(),
+  note: note.optional(),
+  lines: z.array(stocktakeLineRequestSchema).min(1, 'Count at least one item').max(200),
+});
+
+export type PostStocktakeRequest = z.infer<typeof postStocktakeRequestSchema>;
+
+export const stocktakeLineViewSchema = z.object({
+  id: z.string().uuid(),
+  lineNo: z.number(),
+  itemId: z.string().uuid(),
+  itemSku: z.string(),
+  itemName: z.string(),
+  baseUomCode: z.string(),
+  bookQuantity: z.string(),
+  countedQuantity: z.string(),
+  quantityDelta: z.string(),
+  unitCost: z.string(),
+  /** Signed value change: negative for a shortage. */
+  amount: z.string(),
+});
+
+export type StocktakeLineView = z.infer<typeof stocktakeLineViewSchema>;
+
+export const stocktakeViewSchema = z.object({
+  id: z.string().uuid(),
+  docNo: z.string(),
+  warehouseId: z.string().uuid(),
+  warehouseCode: z.string(),
+  warehouseName: z.string(),
+  movementDate: z.string(),
+  note: z.string().nullable(),
+  status: z.string(),
+  lines: z.array(stocktakeLineViewSchema),
+  createdAt: z.string(),
+  createdBy: z.string().uuid(),
+});
+
+export type StocktakeView = z.infer<typeof stocktakeViewSchema>;
+
+export const listStocktakesQuerySchema = z.object({
+  warehouseId: z.string().uuid().optional(),
+  limit: z.coerce.number().int().min(1).max(500).default(100),
+});
+
+export type ListStocktakesQuery = z.infer<typeof listStocktakesQuerySchema>;
+
+// —— Transfers ———————————————————————————————————————————————
+
+export const stockTransferLineRequestSchema = z.object({
+  itemId: z.string().uuid(),
+  quantity: positiveQuantity,
+});
+
+export type StockTransferLineRequest = z.infer<typeof stockTransferLineRequestSchema>;
+
+export const postStockTransferRequestSchema = z
+  .object({
+    fromWarehouseId: z.string().uuid(),
+    toWarehouseId: z.string().uuid(),
+    movementDate: movementDate.optional(),
+    note: note.optional(),
+    lines: z.array(stockTransferLineRequestSchema).min(1, 'Transfer at least one item').max(200),
+  })
+  .refine((value) => value.fromWarehouseId !== value.toWarehouseId, {
+    message: 'Choose two different warehouses',
+    path: ['toWarehouseId'],
+  });
+
+export type PostStockTransferRequest = z.infer<typeof postStockTransferRequestSchema>;
+
+export const stockTransferLineViewSchema = z.object({
+  id: z.string().uuid(),
+  lineNo: z.number(),
+  itemId: z.string().uuid(),
+  itemSku: z.string(),
+  itemName: z.string(),
+  baseUomCode: z.string(),
+  quantity: z.string(),
+  unitCost: z.string(),
+  /** The value moved, always positive. */
+  amount: z.string(),
+});
+
+export type StockTransferLineView = z.infer<typeof stockTransferLineViewSchema>;
+
+export const stockTransferViewSchema = z.object({
+  id: z.string().uuid(),
+  docNo: z.string(),
+  fromWarehouseId: z.string().uuid(),
+  fromWarehouseCode: z.string(),
+  fromWarehouseName: z.string(),
+  toWarehouseId: z.string().uuid(),
+  toWarehouseCode: z.string(),
+  toWarehouseName: z.string(),
+  movementDate: z.string(),
+  note: z.string().nullable(),
+  status: z.string(),
+  lines: z.array(stockTransferLineViewSchema),
+  createdAt: z.string(),
+  createdBy: z.string().uuid(),
+});
+
+export type StockTransferView = z.infer<typeof stockTransferViewSchema>;
+
+export const listStockTransfersQuerySchema = z.object({
+  warehouseId: z.string().uuid().optional(),
+  limit: z.coerce.number().int().min(1).max(500).default(100),
+});
+
+export type ListStockTransfersQuery = z.infer<typeof listStockTransfersQuerySchema>;

@@ -17,6 +17,8 @@ below works:
 - item master data with categories, units of measure, conversion chains and barcodes
 - stock balances per warehouse and item, manual receipts and issues valued at the moving
   weighted average, an append-only stock ledger, and a guard that keeps stock non-negative
+- posted stocktakes that turn counts into gains or losses, and warehouse transfers that move
+  stock and value without changing the total
 - append-only audit log written inside the same transaction as the change
 - gapless document numbering service
 - in-database job queue with a scheduled maintenance job

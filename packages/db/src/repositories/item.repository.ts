@@ -74,6 +74,26 @@ export class DrizzleItemRepository implements ItemRepository {
     return toItem(row, barcodes.get(row.id) ?? []);
   }
 
+  async findByIds(tx: Tx, companyId: string, ids: readonly string[]): Promise<Item[]> {
+    if (ids.length === 0) {
+      return [];
+    }
+    const db = asDb(tx);
+    const rows = await db
+      .select()
+      .from(items)
+      .where(and(eq(items.companyId, companyId), inArray(items.id, [...ids])));
+    if (rows.length === 0) {
+      return [];
+    }
+    const barcodes = await loadBarcodes(
+      db,
+      companyId,
+      rows.map((row) => row.id),
+    );
+    return rows.map((row) => toItem(row, barcodes.get(row.id) ?? []));
+  }
+
   async findBySku(tx: Tx, companyId: string, sku: string): Promise<Item | null> {
     const db = asDb(tx);
     const rows = await db

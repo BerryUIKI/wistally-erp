@@ -11,5 +11,7 @@ export * from './repositories/inventory.repository.js';
 export * from './repositories/item.repository.js';
 export * from './repositories/party.repository.js';
 export * from './repositories/session.repository.js';
+export * from './repositories/stock-transfer.repository.js';
+export * from './repositories/stocktake.repository.js';
 export * from './repositories/user.repository.js';
 export * from './repositories/warehouse.repository.js';

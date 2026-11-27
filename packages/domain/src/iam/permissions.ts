@@ -36,6 +36,8 @@ export const PERMISSIONS = [
   'inventory.balance.view',
   'inventory.stock.receive',
   'inventory.stock.issue',
+  'inventory.stocktake.create',
+  'inventory.transfer.create',
   'inventory.cost.view',
 ] as const;
 
@@ -117,6 +119,8 @@ export const ROLE_DEFINITIONS: readonly RoleDefinition[] = [
       'inventory.balance.view',
       'inventory.stock.receive',
       'inventory.stock.issue',
+      'inventory.stocktake.create',
+      'inventory.transfer.create',
     ],
   },
 ];
