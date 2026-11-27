@@ -65,6 +65,29 @@ export const accounts = mysqlTable(
 );
 
 /**
+ * Which leaf account each posting key resolves to. The rules are code; these
+ * rows are the per-company configuration.
+ */
+export const accountMappings = mysqlTable(
+  'account_mappings',
+  {
+    id: char('id', { length: 36 }).primaryKey(),
+    companyId: char('company_id', { length: 36 })
+      .notNull()
+      .references(() => companies.id),
+    mappingKey: varchar('mapping_key', { length: 64 }).notNull(),
+    accountId: char('account_id', { length: 36 })
+      .notNull()
+      .references(() => accounts.id),
+    ...timestamps(),
+  },
+  (table) => [
+    uniqueIndex('uq_account_mappings_company_key').on(table.companyId, table.mappingKey),
+    index('idx_account_mappings_company_account').on(table.companyId, table.accountId),
+  ],
+);
+
+/**
  * Double-entry journal entries. Drafts have no document number; the number is
  * allocated at posting so abandoned drafts cannot leave gaps.
  */
@@ -82,6 +105,10 @@ export const journalEntries = mysqlTable(
     reversalOfId: char('reversal_of_id', { length: 36 }).references(
       (): AnyMySqlColumn => journalEntries.id,
     ),
+    /** System postings record what produced them; manual entries leave these null. */
+    sourceType: varchar('source_type', { length: 24 }),
+    sourceId: char('source_id', { length: 36 }),
+    sourceEvent: varchar('source_event', { length: 32 }),
     approvedAt: datetime('approved_at', { mode: 'date', fsp: 3 }),
     approvedBy: char('approved_by', { length: 36 }),
     postedAt: datetime('posted_at', { mode: 'date', fsp: 3 }),
@@ -93,6 +120,12 @@ export const journalEntries = mysqlTable(
     index('idx_journal_entries_company_date').on(table.companyId, table.entryDate),
     index('idx_journal_entries_company_status').on(table.companyId, table.status),
     index('idx_journal_entries_company_reversal').on(table.companyId, table.reversalOfId),
+    uniqueIndex('uq_journal_entries_source').on(
+      table.companyId,
+      table.sourceType,
+      table.sourceId,
+      table.sourceEvent,
+    ),
     check(
       'ck_journal_entries_status',
       sql`${table.status} in ('draft','approved','posted','reversed')`,

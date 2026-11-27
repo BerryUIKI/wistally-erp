@@ -258,6 +258,9 @@ Resolution priority, highest first:
 3. The company default in `account_mappings`
 4. **Fail** — never guess. A missing mapping is a configuration error and posting must fail loudly.
 
+The MVP ships the company default and the resolver contract takes the category and party context;
+the overrides themselves arrive with the modules that expose those settings.
+
 ### 5.3 Posting rules
 
 | # | Event | Debit | Credit | Amount basis |

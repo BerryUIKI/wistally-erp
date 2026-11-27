@@ -60,6 +60,49 @@ export const importChartResponseSchema = z.object({
 
 export type ImportChartResponse = z.infer<typeof importChartResponseSchema>;
 
+// —— Account mappings ————————————————————————————————————————
+
+export const ACCOUNT_MAPPING_KEY_VALUES = [
+  'inventory.default',
+  'grni.default',
+  'ap.trade',
+  'vat.input',
+  'vat.input.pending',
+  'vat.output',
+  'ar.trade',
+  'revenue.sales',
+  'cogs.default',
+  'bank.default',
+  'cash.default',
+  'expense.stocktake.shortage',
+  'income.stocktake.surplus',
+  'pending.property',
+  'equity.opening',
+] as const;
+
+export const accountMappingKeySchema = z.enum(ACCOUNT_MAPPING_KEY_VALUES);
+export type AccountMappingKey = z.infer<typeof accountMappingKeySchema>;
+
+export const accountMappingViewSchema = z.object({
+  key: accountMappingKeySchema,
+  label: z.string(),
+  description: z.string(),
+  accountId: z.string().uuid().nullable(),
+  accountCode: z.string().nullable(),
+  accountName: z.string().nullable(),
+  version: z.number().nullable(),
+});
+
+export type AccountMappingView = z.infer<typeof accountMappingViewSchema>;
+
+export const setAccountMappingRequestSchema = z.object({
+  accountId: z.string().uuid(),
+  /** Null when the key has no mapping yet. */
+  version: z.number().int().positive().nullable(),
+});
+
+export type SetAccountMappingRequest = z.infer<typeof setAccountMappingRequestSchema>;
+
 // —— Journal entries ——————————————————————————————————————————
 
 export const JOURNAL_ENTRY_STATUS_VALUES = ['draft', 'approved', 'posted', 'reversed'] as const;
@@ -122,6 +165,9 @@ export const journalEntryViewSchema = z.object({
   memo: z.string(),
   status: journalEntryStatusSchema,
   reversalOfId: z.string().uuid().nullable(),
+  sourceType: z.string().nullable(),
+  sourceId: z.string().nullable(),
+  sourceEvent: z.string().nullable(),
   lines: z.array(journalEntryLineViewSchema),
   totalDebit: z.string(),
   totalCredit: z.string(),

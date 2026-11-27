@@ -31,6 +31,10 @@ export interface JournalEntryProps {
   readonly memo: string;
   readonly status: JournalEntryStatus;
   readonly reversalOfId: string | null;
+  /** What produced a system posting; null for a manually entered entry. */
+  readonly sourceType: string | null;
+  readonly sourceId: string | null;
+  readonly sourceEvent: string | null;
   readonly lines: readonly JournalLineProps[];
   readonly approvedAt: Date | null;
   readonly approvedBy: string | null;
@@ -74,6 +78,21 @@ export interface CreateReversalInput {
   readonly memo: string;
   /** One id per original line, in order. */
   readonly lineIds: readonly string[];
+  readonly actorId: string;
+  readonly now: Date;
+}
+
+export interface CreatePostedJournalEntryInput {
+  readonly id: string;
+  readonly companyId: string;
+  readonly docNo: string;
+  readonly entryDate: string;
+  readonly memo: string;
+  /** Signed amounts: the posting rules may produce red lines. */
+  readonly lines: readonly JournalLineInput[];
+  readonly sourceType: string;
+  readonly sourceId: string;
+  readonly sourceEvent: string;
   readonly actorId: string;
   readonly now: Date;
 }
@@ -135,6 +154,54 @@ function normalizeManualLines(lines: readonly JournalLineInput[]): Result<Normal
     }
     if (line.amount.isZero() || line.amount.isNegative()) {
       return failWith('ACCOUNTING.INVALID_LINE_AMOUNT', 'Line amounts must be greater than zero', {
+        accountId: line.accountId,
+      });
+    }
+    if (currency === null) {
+      currency = line.amount.currency;
+    } else if (line.amount.currency !== currency) {
+      return failWith('ACCOUNTING.CURRENCY_MISMATCH', 'The entry mixes currencies');
+    }
+    const memo = line.memo?.trim() || null;
+    if (memo !== null && memo.length > LINE_MEMO_MAX_LENGTH) {
+      return failWith('ACCOUNTING.INVALID_LINE_MEMO', 'A line memo is at most 200 characters', {
+        accountId: line.accountId,
+      });
+    }
+    normalized.push({
+      id: line.id,
+      accountId: line.accountId,
+      side,
+      amount: line.amount,
+      memo,
+    });
+  }
+  return ok(normalized);
+}
+
+/** System postings may carry negative amounts, but never zero. */
+function normalizePostedLines(lines: readonly JournalLineInput[]): Result<NormalizedLine[]> {
+  if (lines.length < 2) {
+    return failWith('ACCOUNTING.ENTRY_LINES_REQUIRED', 'A journal entry needs at least two lines');
+  }
+  if (lines.length > MAX_LINES) {
+    return failWith(
+      'ACCOUNTING.ENTRY_TOO_LARGE',
+      `A journal entry holds at most ${MAX_LINES} lines`,
+    );
+  }
+
+  const normalized: NormalizedLine[] = [];
+  let currency: string | null = null;
+  for (const line of lines) {
+    const side = line.side.trim().toLowerCase();
+    if (!isJournalSide(side)) {
+      return failWith('ACCOUNTING.INVALID_LINE_SIDE', 'A line is either debit or credit', {
+        accountId: line.accountId,
+      });
+    }
+    if (line.amount.isZero()) {
+      return failWith('ACCOUNTING.INVALID_LINE_AMOUNT', 'A line amount cannot be zero', {
         accountId: line.accountId,
       });
     }
@@ -225,11 +292,78 @@ export class JournalEntry {
         memo: header.value.memo,
         status: 'draft',
         reversalOfId: null,
+        sourceType: null,
+        sourceId: null,
+        sourceEvent: null,
         lines: built,
         approvedAt: null,
         approvedBy: null,
         postedAt: null,
         postedBy: null,
+        createdAt: input.now,
+        createdBy: input.actorId,
+        updatedAt: input.now,
+        updatedBy: input.actorId,
+        version: 1,
+      }),
+    );
+  }
+
+  /**
+   * Creates an already-posted entry for a system posting. There is no draft or
+   * approval step: the business document's own workflow already approved it.
+   */
+  static createPosted(input: CreatePostedJournalEntryInput): Result<JournalEntry> {
+    const header = normalizeHeader(input.entryDate, input.memo);
+    if (!header.ok) {
+      return header;
+    }
+    const lines = normalizePostedLines(input.lines);
+    if (!lines.ok) {
+      return lines;
+    }
+    if (input.docNo.trim().length === 0) {
+      return failWith('ACCOUNTING.DOC_NO_REQUIRED', 'A posted entry needs a document number');
+    }
+    if (
+      input.sourceType.trim().length === 0 ||
+      input.sourceId.trim().length === 0 ||
+      input.sourceEvent.trim().length === 0
+    ) {
+      return failWith('ACCOUNTING.SOURCE_REQUIRED', 'A system posting needs its source');
+    }
+
+    const built: JournalLineProps[] = lines.value.map((line, index) => ({
+      id: line.id,
+      journalEntryId: input.id,
+      lineNo: index + 1,
+      accountId: line.accountId,
+      side: line.side,
+      amount: line.amount,
+      memo: line.memo,
+    }));
+    const balanced = assertBalanced(built);
+    if (!balanced.ok) {
+      return balanced;
+    }
+
+    return ok(
+      new JournalEntry({
+        id: input.id,
+        companyId: input.companyId,
+        docNo: input.docNo,
+        entryDate: header.value.entryDate,
+        memo: header.value.memo,
+        status: 'posted',
+        reversalOfId: null,
+        sourceType: input.sourceType,
+        sourceId: input.sourceId,
+        sourceEvent: input.sourceEvent,
+        lines: built,
+        approvedAt: null,
+        approvedBy: null,
+        postedAt: input.now,
+        postedBy: input.actorId,
         createdAt: input.now,
         createdBy: input.actorId,
         updatedAt: input.now,
@@ -375,6 +509,9 @@ export class JournalEntry {
         memo: header.value.memo,
         status: 'posted',
         reversalOfId: original.props.id,
+        sourceType: 'journal_reversal',
+        sourceId: original.props.id,
+        sourceEvent: 'reversed',
         lines,
         approvedAt: null,
         approvedBy: null,

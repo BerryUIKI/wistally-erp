@@ -11,7 +11,7 @@ import type {
 import { JournalEntry as JournalEntryModel } from '@wistally/domain';
 import type { Tx } from '@wistally/kernel';
 import { Money } from '@wistally/kernel';
-import { and, asc, desc, eq, inArray } from 'drizzle-orm';
+import { and, asc, count, desc, eq, inArray } from 'drizzle-orm';
 
 import { accounts, journalEntries, journalEntryLines } from '../schema/accounting.js';
 import { companyCurrency } from './company-currency.js';
@@ -45,6 +45,9 @@ function toEntry(row: EntryRow, lines: readonly JournalLineProps[]): JournalEntr
     memo: row.memo,
     status: row.status as JournalEntryStatus,
     reversalOfId: row.reversalOfId,
+    sourceType: row.sourceType,
+    sourceId: row.sourceId,
+    sourceEvent: row.sourceEvent,
     lines,
     approvedAt: row.approvedAt,
     approvedBy: row.approvedBy,
@@ -94,6 +97,38 @@ export class DrizzleJournalEntryRepository implements JournalEntryRepository {
       row,
       lines.map((line) => toLine(line, currency)),
     );
+  }
+
+  async findIdBySource(
+    tx: Tx,
+    companyId: string,
+    sourceType: string,
+    sourceId: string,
+    sourceEvent: string,
+  ): Promise<string | null> {
+    const rows = await asDb(tx)
+      .select({ id: journalEntries.id })
+      .from(journalEntries)
+      .where(
+        and(
+          eq(journalEntries.companyId, companyId),
+          eq(journalEntries.sourceType, sourceType),
+          eq(journalEntries.sourceId, sourceId),
+          eq(journalEntries.sourceEvent, sourceEvent),
+        ),
+      )
+      .limit(1);
+    return rows[0]?.id ?? null;
+  }
+
+  async countLinesForAccount(tx: Tx, companyId: string, accountId: string): Promise<number> {
+    const rows = await asDb(tx)
+      .select({ total: count() })
+      .from(journalEntryLines)
+      .where(
+        and(eq(journalEntryLines.companyId, companyId), eq(journalEntryLines.accountId, accountId)),
+      );
+    return Number(rows[0]?.total ?? 0);
   }
 
   async list(
@@ -186,6 +221,9 @@ export class DrizzleJournalEntryRepository implements JournalEntryRepository {
       memo: props.memo,
       status: props.status,
       reversalOfId: props.reversalOfId,
+      sourceType: props.sourceType,
+      sourceId: props.sourceId,
+      sourceEvent: props.sourceEvent,
       approvedAt: props.approvedAt,
       approvedBy: props.approvedBy,
       postedAt: props.postedAt,
